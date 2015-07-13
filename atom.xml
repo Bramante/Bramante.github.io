@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante's Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2014-10-12T00:58:16+08:00</updated>
+  <updated>2015-07-13T00:14:44+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,5 +12,22 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Hello World]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/12/hello-world/"/>
+    <updated>2015-07-12T23:48:45+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/12/hello-world</id>
+    <content type="html"><![CDATA[<p>第一次寫Markdown, 哈哈 ~</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+int main(void)
+{
+ printf("Hello World");
+}
+</code></pre>
+]]></content>
+  </entry>
   
 </feed>

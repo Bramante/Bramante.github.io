@@ -3,8 +3,11 @@
 # ----------------------- #
 
 url: http://Bramante.github.io
-title: Bramante's Blog
-subtitle: Happy Coding
+title: Bramante&#x27;s Blog
+subtitle: 
+intro1: I&#x27;m<font color="#6E6EFF"><b> Bramante</b></font>,
+intro2: a <font color="#6E6EFF"><b>Software Engineer</b></font>
+intro3: from <font color="#6E6EFF"><b>Hsinchu City</b></font>
 author: Bramante
 simple_search: https://www.google.com/search
 description:

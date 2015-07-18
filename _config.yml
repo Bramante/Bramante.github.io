@@ -102,3 +102,6 @@ google_analytics_tracking_id:
 
 # Facebook Like
 facebook_like: false
+
+# Visitor Counter
+flag_counter: true

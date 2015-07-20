@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-07-20T23:32:46+08:00</updated>
+  <updated>2015-07-21T00:59:56+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,34 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Dump Kernel Callstack]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/"/>
+    <updated>2015-07-21T00:45:38+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack</id>
+    <content type="html"><![CDATA[<p>在Console Dump Kernel的Callstack很簡單,
+只要執行下列的Command即可印出所有Task的Callstack:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">echo 1 &gt; /proc/sys/kernel/sysrq
+echo 9 &gt; /proc/sys/kernel/printk
+echo &quot;t&quot; &gt; /proc/sysrq-trigger
+</code></pre></div>
+<p>如果Hot Key有用的話, 也可以用Hot Key觸發:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">echo 1 &gt; /proc/sys/kernel/sysrq
+echo 9 &gt; /proc/sys/kernel/printk
+Ctrl + break  放開再按  t
+</code></pre></div>
+<p>如果想在Kernel的code裡印出Callstack, 了解Function怎麼被Call到的,
+可以call dump_stack(), 如果想一併了解Task Name與PID, 
+可以印出current的comm與pid:</p>
+
+<figure class='code'><figcaption><span>Dump Stack</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">printk</span><span class="p">(</span><span class="s">&quot;task name: %s, pid: %d </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">pid</span><span class="p">);</span>
+</span><span class='line'><span class="n">dump_stack</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Hello World]]></title>

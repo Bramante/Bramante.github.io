@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-07-21T00:59:56+08:00</updated>
+  <updated>2015-07-23T09:28:46+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -14,23 +14,207 @@
 
   
   <entry>
+    <title type="html"><![CDATA[　ttf2png]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/22/ttf2png/"/>
+    <updated>2015-07-22T00:33:58+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/22/ttf2png</id>
+    <content type="html"><![CDATA[<p>想要看TTF字型檔裡有哪些字,
+可以利用ttf2png把字型檔的內容dump到png圖檔裡來看.</p>
+
+<p>下載ttf2png的source code:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ mkdir test_ttf2png
+</span><span class='line'>bramante@matrix:~$ cd test_ttf2png/
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ wget http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
+</span><span class='line'>--2015-07-21 12:40:49--  http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
+</span><span class='line'>Resolving sid.ethz.ch (sid.ethz.ch)... 192.33.97.200
+</span><span class='line'>Connecting to sid.ethz.ch (sid.ethz.ch)|192.33.97.200|:80... connected.
+</span><span class='line'>HTTP request sent, awaiting response... 200 OK
+</span><span class='line'>Length: 11538 (11K) [application/octet-stream]
+</span><span class='line'>Saving to: `ttf2png-0.3.tar.gz'
+</span><span class='line'>
+</span><span class='line'>100%[==============================================================================================================================&gt;] 11,538      --.-K/s   in 0.004s
+</span><span class='line'>
+</span><span class='line'>2015-07-21 12:40:51 (3.13 MB/s) - `ttf2png-0.3.tar.gz' saved [11538/11538]
+</span><span class='line'>
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
+</span><span class='line'>total 20
+</span><span class='line'>drwxrwxr-x  2 bramante bramante  4096 Jul 21 12:40 ./
+</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
+</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
+</span><span class='line'>bramante@matrix:~/test_ttf2png$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>Build出ttf2png:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png$ tar xzf ttf2png-0.3.tar.gz
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
+</span><span class='line'>total 24
+</span><span class='line'>drwxrwxr-x  3 bramante bramante  4096 Jul 21 12:41 ./
+</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
+</span><span class='line'>drwxr-xr-x  2 bramante bramante  4096 Nov  3  2008 ttf2png-0.3/
+</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ cd ttf2png-0.3/
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 52
+</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Nov  3  2008 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ make
+</span><span class='line'>gcc -Wall ttf2png.c -o ttf2png -I/usr/include/freetype2 -L/usr/lib/x86_64-linux-gnu -lfreetype -lz -I/usr/include/libpng12  -lpng12
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 76
+</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Jul 21 12:41 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante 22643 Jul 21 12:41 ttf2png*
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>把Windows 7裡的times.ttf拿來dump一下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 892
+</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:46 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ./ttf2png  -l 11 -s 18 -e -o ./times.png ./times.ttf
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 904
+</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:47 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  12206 Jul 21 12:47 times.png
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>得到的times.png如下, 可以看到times.ttf裡有哪些字:</p>
+
+<p><img class="left" src="http://Bramante.github.io/images/2015-07-22-ttf2png/times.png" width="512" height="1024" title="times.png" ></p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Dump Kernel Callstack]]></title>
     <link href="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/"/>
     <updated>2015-07-21T00:45:38+08:00</updated>
     <id>http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack</id>
     <content type="html"><![CDATA[<p>在Console Dump Kernel的Callstack很簡單,
 只要執行下列的Command即可印出所有Task的Callstack:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">echo 1 &gt; /proc/sys/kernel/sysrq
+
+<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
 echo 9 &gt; /proc/sys/kernel/printk
-echo &quot;t&quot; &gt; /proc/sysrq-trigger
-</code></pre></div>
+echo "t" &gt; /proc/sysrq-trigger
+</code></pre>
+
 <p>如果Hot Key有用的話, 也可以用Hot Key觸發:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">echo 1 &gt; /proc/sys/kernel/sysrq
+
+<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
 echo 9 &gt; /proc/sys/kernel/printk
 Ctrl + break  放開再按  t
-</code></pre></div>
+</code></pre>
+
 <p>如果想在Kernel的code裡印出Callstack, 了解Function怎麼被Call到的,
-可以call dump_stack(), 如果想一併了解Task Name與PID, 
+可以call dump_stack(), 如果想一併了解Task Name與PID,
 可以印出current的comm與pid:</p>
 
 <figure class='code'><figcaption><span>Dump Stack</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -38,6 +222,7 @@ Ctrl + break  放開再按  t
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">printk</span><span class="p">(</span><span class="s">&quot;task name: %s, pid: %d </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">pid</span><span class="p">);</span>
 </span><span class='line'><span class="n">dump_stack</span><span class="p">();</span>
 </span></code></pre></td></tr></table></div></figure>
+
 ]]></content>
   </entry>
   
@@ -62,6 +247,9 @@ Ctrl + break  放開再按  t
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+
+
+
 <figure class='code'><figcaption><span>Test </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -80,6 +268,9 @@ Ctrl + break  放開再按  t
 </span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>  
 </span></code></pre></td></tr></table></div></figure>
+
+
+
 ]]></content>
   </entry>
   

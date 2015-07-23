@@ -14,10 +14,9 @@
     
   
   <meta name="description" content="在Console Dump Kernel的Callstack很簡單,
-只要執行下列的Command即可印出所有Task的Callstack:
-echo 1 &gt; /proc/sys/kernel/sysrq
+只要執行下列的Command即可印出所有Task的Callstack: echo 1 &gt; /proc/sys/kernel/sysrq
 echo 9 &gt; /proc/sys/kernel/printk
-echo & &hellip;">
+echo " &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -34,10 +33,9 @@ echo & &hellip;">
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
   <meta name="og:title" content="Dump Kernel Callstack" />
   <meta name="og:description" content="在Console Dump Kernel的Callstack很簡單,
-只要執行下列的Command即可印出所有Task的Callstack:
-echo 1 &gt; /proc/sys/kernel/sysrq
+只要執行下列的Command即可印出所有Task的Callstack: echo 1 &gt; /proc/sys/kernel/sysrq
 echo 9 &gt; /proc/sys/kernel/printk
-echo & &hellip;" />
+echo " &hellip;" />
   <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/"/>
   <meta name="url" content="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/">
   
@@ -126,17 +124,21 @@ echo & &hellip;" />
 
   <div class="entry-content"><p>在Console Dump Kernel的Callstack很簡單,
 只要執行下列的Command即可印出所有Task的Callstack:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">echo 1 &gt; /proc/sys/kernel/sysrq
+
+<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
 echo 9 &gt; /proc/sys/kernel/printk
-echo &quot;t&quot; &gt; /proc/sysrq-trigger
-</code></pre></div>
+echo "t" &gt; /proc/sysrq-trigger
+</code></pre>
+
 <p>如果Hot Key有用的話, 也可以用Hot Key觸發:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">echo 1 &gt; /proc/sys/kernel/sysrq
+
+<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
 echo 9 &gt; /proc/sys/kernel/printk
 Ctrl + break  放開再按  t
-</code></pre></div>
+</code></pre>
+
 <p>如果想在Kernel的code裡印出Callstack, 了解Function怎麼被Call到的,
-可以call dump_stack(), 如果想一併了解Task Name與PID, 
+可以call dump_stack(), 如果想一併了解Task Name與PID,
 可以印出current的comm與pid:</p>
 
 <figure class='code'><figcaption><span>Dump Stack</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -144,6 +146,7 @@ Ctrl + break  放開再按  t
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">printk</span><span class="p">(</span><span class="s">&quot;task name: %s, pid: %d </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">pid</span><span class="p">);</span>
 </span><span class='line'><span class="n">dump_stack</span><span class="p">();</span>
 </span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
@@ -193,6 +196,8 @@ Ctrl + break  放開再按  t
       <a class="pull-left" href="/blog/2015/07/12/hello-world/" title="Previous Post: Hello World">&laquo; Hello World</a>
     
     
+      <a class="pull-right" href="/blog/2015/07/22/ttf2png/" title="Next Post: 　ttf2png">　ttf2png &raquo;</a>
+    
   </footer>
 
 </div>
@@ -218,6 +223,10 @@ Ctrl + break  放開再按  t
   <div class="span3">
     <h2>recent posts</h2>
     <ul class="recent_posts">
+      
+        <li>
+          <a href="/blog/2015/07/22/ttf2png/">　ttf2png</a>
+        </li>
       
         <li>
           <a href="/blog/2015/07/21/dump-kernel-callstack/">Dump Kernel Callstack</a>

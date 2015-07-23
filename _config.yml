@@ -36,9 +36,7 @@ destination: public
 plugins: plugins
 code_dir: downloads/code
 category_dir: blog/categories
-markdown: redcarpet
-redcarpet:
-  extensions: ["fenced_code_blocks", "tables", "highlight", "strikethrough"]
+markdown: rdiscount
 rdiscount:
   extensions:
     - autolink

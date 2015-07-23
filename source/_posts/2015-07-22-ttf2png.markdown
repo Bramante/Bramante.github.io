@@ -1,0 +1,106 @@
+---
+layout: post
+title: "　ttf2png"
+date: 2015-07-22 00:33:58 +0800
+comments: true
+categories: 
+---
+
+想要看TTF字型檔裡有哪些字,
+可以利用ttf2png把字型檔的內容dump到png圖檔裡來看.
+
+下載ttf2png的source code:
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~$ mkdir test_ttf2png
+	bramante@matrix:~$ cd test_ttf2png/
+	bramante@matrix:~/test_ttf2png$ wget http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
+	--2015-07-21 12:40:49--  http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
+	Resolving sid.ethz.ch (sid.ethz.ch)... 192.33.97.200
+	Connecting to sid.ethz.ch (sid.ethz.ch)|192.33.97.200|:80... connected.
+	HTTP request sent, awaiting response... 200 OK
+	Length: 11538 (11K) [application/octet-stream]
+	Saving to: `ttf2png-0.3.tar.gz'
+	
+	100%[==============================================================================================================================>] 11,538      --.-K/s   in 0.004s
+	
+	2015-07-21 12:40:51 (3.13 MB/s) - `ttf2png-0.3.tar.gz' saved [11538/11538]
+	
+	bramante@matrix:~/test_ttf2png$ ll
+	total 20
+	drwxrwxr-x  2 bramante bramante  4096 Jul 21 12:40 ./
+	drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
+	-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
+	bramante@matrix:~/test_ttf2png$
+```
+</font>
+
+Build出ttf2png:
+
+<font face="sans">
+```
+	bramante@matrix:~/test_ttf2png$ tar xzf ttf2png-0.3.tar.gz
+	bramante@matrix:~/test_ttf2png$ ll
+	total 24
+	drwxrwxr-x  3 bramante bramante  4096 Jul 21 12:41 ./
+	drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
+	drwxr-xr-x  2 bramante bramante  4096 Nov  3  2008 ttf2png-0.3/
+	-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
+	bramante@matrix:~/test_ttf2png$ cd ttf2png-0.3/
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+	total 52
+	drwxr-xr-x 2 bramante bramante  4096 Nov  3  2008 ./
+	drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
+	-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
+	-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
+	-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
+	-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$ make
+	gcc -Wall ttf2png.c -o ttf2png -I/usr/include/freetype2 -L/usr/lib/x86_64-linux-gnu -lfreetype -lz -I/usr/include/libpng12  -lpng12
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+	total 76
+	drwxr-xr-x 2 bramante bramante  4096 Jul 21 12:41 ./
+	drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
+	-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
+	-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
+	-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
+	-rwxrwxr-x 1 bramante bramante 22643 Jul 21 12:41 ttf2png*
+	-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$
+```
+</font>
+
+把Windows 7裡的times.ttf拿來dump一下:
+
+<font face="sans">
+```
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+	total 892
+	drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:46 ./
+	drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
+	-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
+	-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
+	-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
+	-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
+	-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
+	-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ./ttf2png  -l 11 -s 18 -e -o ./times.png ./times.ttf
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+	total 904
+	drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:47 ./
+	drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
+	-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
+	-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
+	-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
+	-rw-rw-r-- 1 bramante bramante  12206 Jul 21 12:47 times.png
+	-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
+	-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
+	-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
+	bramante@matrix:~/test_ttf2png/ttf2png-0.3$
+```
+</font>
+
+得到的times.png如下, 可以看到times.ttf裡有哪些字:
+
+{% img left /images/2015-07-22-ttf2png/times.png 512 1024 times.png %}

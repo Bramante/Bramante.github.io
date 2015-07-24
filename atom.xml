@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-07-23T23:56:28+08:00</updated>
+  <updated>2015-07-25T00:50:14+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,69 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Determine CPU endianness at runtime]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/25/determine-cpu-endianness-at-runtime/"/>
+    <updated>2015-07-25T00:33:49+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/25/determine-cpu-endianness-at-runtime</id>
+    <content type="html"><![CDATA[<p>之前工作上用的CPU由Big Endian改成了Little Endian,
+同樣的code會在不同Endian的CPU上跑,
+因此寫了段能在runtime偵測Endian的code,
+這樣可以用來偵測程式跑在哪個Chip上.</p>
+
+<figure class='code'><figcaption><span>endianness.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">a</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">ptr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;big endian</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>  
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;little endian</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>   
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/endianness$ gcc -o endianness endianness.c
+</span><span class='line'>bramante@matrix:~/endianness$ ./endianness
+</span><span class='line'>little endian
+</span><span class='line'>bramante@matrix:~/endianness$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How to backup an old computer]]></title>

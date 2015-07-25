@@ -1,0 +1,48 @@
+---
+layout: post
+title: "Hook API"
+date: 2015-07-25 23:56:40 +0800
+comments: true
+categories: 
+---
+
+在debug時, Hook API可以提供programmer API被call的資訊, 是個相當實用的技巧. 不定參數的API也是可以hook的, 而且這個方法在x86, MIPS, ARM 上都可以順利使用.
+
+``` c hook.c
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <stdarg.h>
+	
+	void * __wrap_malloc(size_t size)
+	{
+	 printf("my malloc(size: %d)\n", size);
+	 return __real_malloc(size);
+	}
+	
+	int __wrap_printf(const char *format, ...)
+	{
+	 puts("my printf !!");
+	 va_list args;
+	 va_start(args, format);
+	 vprintf(format, args);
+	 va_end(args);
+	 return 0 ;
+	}
+	
+	int main(void)
+	{
+	 void* ptr = malloc(10);
+	 free(ptr) ;
+	 return 0 ;
+	}
+```
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~/hook$ gcc -Wl,--wrap,malloc -Wl,--wrap,printf -o hook hook.c -lc
+	bramante@matrix:~/hook$ ./hook
+	my printf !!
+	my malloc(size: 10)
+	bramante@matrix:~/hook$ 
+```
+</font>

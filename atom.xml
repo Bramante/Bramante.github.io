@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-07-26T00:07:04+08:00</updated>
+  <updated>2015-07-28T00:32:41+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,512 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Extract images from a Video using FFmpeg]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg/"/>
+    <updated>2015-07-27T23:59:25+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg</id>
+    <content type="html"><![CDATA[<p>利用FFmpeg的 libavformat, libavcodec, libswscale 可以把video file的每個video frame給dump出來.</p>
+
+<p>在google上可以找到這樣的source code:
+ <a href="http://dranger.com/ffmpeg/tutorial01.c">http://dranger.com/ffmpeg/tutorial01.c</a></p>
+
+<p>在我的Ubuntu server上, 這支程式需要稍做修改, 避開compile error, 才能build出執行檔. 我把它改成可以dump出每個video frame, 而不是原本的只有dump出頭5個frame.</p>
+
+<figure class='code'><figcaption><span>ffmpeg_ppm_dumper.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+<span class='line-number'>145</span>
+<span class='line-number'>146</span>
+<span class='line-number'>147</span>
+<span class='line-number'>148</span>
+<span class='line-number'>149</span>
+<span class='line-number'>150</span>
+<span class='line-number'>151</span>
+<span class='line-number'>152</span>
+<span class='line-number'>153</span>
+<span class='line-number'>154</span>
+<span class='line-number'>155</span>
+<span class='line-number'>156</span>
+<span class='line-number'>157</span>
+<span class='line-number'>158</span>
+<span class='line-number'>159</span>
+<span class='line-number'>160</span>
+<span class='line-number'>161</span>
+<span class='line-number'>162</span>
+<span class='line-number'>163</span>
+<span class='line-number'>164</span>
+<span class='line-number'>165</span>
+<span class='line-number'>166</span>
+<span class='line-number'>167</span>
+<span class='line-number'>168</span>
+<span class='line-number'>169</span>
+<span class='line-number'>170</span>
+<span class='line-number'>171</span>
+<span class='line-number'>172</span>
+<span class='line-number'>173</span>
+<span class='line-number'>174</span>
+<span class='line-number'>175</span>
+<span class='line-number'>176</span>
+<span class='line-number'>177</span>
+<span class='line-number'>178</span>
+<span class='line-number'>179</span>
+<span class='line-number'>180</span>
+<span class='line-number'>181</span>
+<span class='line-number'>182</span>
+<span class='line-number'>183</span>
+<span class='line-number'>184</span>
+<span class='line-number'>185</span>
+<span class='line-number'>186</span>
+<span class='line-number'>187</span>
+<span class='line-number'>188</span>
+<span class='line-number'>189</span>
+<span class='line-number'>190</span>
+<span class='line-number'>191</span>
+<span class='line-number'>192</span>
+<span class='line-number'>193</span>
+<span class='line-number'>194</span>
+<span class='line-number'>195</span>
+<span class='line-number'>196</span>
+<span class='line-number'>197</span>
+<span class='line-number'>198</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// tutorial01.c</span>
+</span><span class='line'><span class="c1">// Code based on a tutorial by Martin Bohme (boehme@inb.uni-luebeckREMOVETHIS.de)</span>
+</span><span class='line'><span class="c1">// Tested on Gentoo, CVS version 5/01/07 compiled with GCC 4.1.1</span>
+</span><span class='line'><span class="c1">// With updates from https://github.com/chelyaev/ffmpeg-tutorial</span>
+</span><span class='line'><span class="c1">// Updates tested on:</span>
+</span><span class='line'><span class="c1">// LAVC 54.59.100, LAVF 54.29.104, LSWS 2.1.101 </span>
+</span><span class='line'><span class="c1">// on GCC 4.7.2 in Debian February 2015</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// A small sample program that shows how to use libavformat and libavcodec to</span>
+</span><span class='line'><span class="c1">// read video from a file.</span>
+</span><span class='line'><span class="c1">//</span>
+</span><span class='line'><span class="c1">// Use</span>
+</span><span class='line'><span class="c1">//</span>
+</span><span class='line'><span class="c1">// gcc -o tutorial01 tutorial01.c -lavformat -lavcodec -lswscale -lz</span>
+</span><span class='line'><span class="c1">//</span>
+</span><span class='line'><span class="c1">// to build (assuming libavformat and libavcodec are correctly installed</span>
+</span><span class='line'><span class="c1">// your system).</span>
+</span><span class='line'><span class="c1">//</span>
+</span><span class='line'><span class="c1">// Run using</span>
+</span><span class='line'><span class="c1">//</span>
+</span><span class='line'><span class="c1">// tutorial01 myvideofile.mpg</span>
+</span><span class='line'><span class="c1">//</span>
+</span><span class='line'><span class="c1">// to write the first five frames from &quot;myvideofile.mpg&quot; to disk in PPM</span>
+</span><span class='line'><span class="c1">// format.</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#include &lt;libavcodec/avcodec.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;libavformat/avformat.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;libswscale/swscale.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// compatibility with newer API</span>
+</span><span class='line'><span class="cp">#if LIBAVCODEC_VERSION_INT &lt; AV_VERSION_INT(55,28,1)</span>
+</span><span class='line'><span class="cp">#define av_frame_alloc avcodec_alloc_frame</span>
+</span><span class='line'><span class="cp">#define av_frame_free avcodec_free_frame</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">SaveFrame</span><span class="p">(</span><span class="n">AVFrame</span> <span class="o">*</span><span class="n">pFrame</span><span class="p">,</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="kt">int</span> <span class="n">iFrame</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">char</span> <span class="n">szFilename</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">int</span>  <span class="n">y</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Open file</span>
+</span><span class='line'>  <span class="n">sprintf</span><span class="p">(</span><span class="n">szFilename</span><span class="p">,</span> <span class="s">&quot;frame%08d.ppm&quot;</span><span class="p">,</span> <span class="n">iFrame</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">pFile</span><span class="o">=</span><span class="n">fopen</span><span class="p">(</span><span class="n">szFilename</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">pFile</span><span class="o">==</span><span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Write header</span>
+</span><span class='line'>  <span class="n">fprintf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="s">&quot;P6</span><span class="se">\n</span><span class="s">%d %d</span><span class="se">\n</span><span class="s">255</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Write pixel data</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">y</span><span class="o">&lt;</span><span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">fwrite</span><span class="p">(</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="o">*</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">width</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="n">pFile</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Close file</span>
+</span><span class='line'>  <span class="n">fclose</span><span class="p">(</span><span class="n">pFile</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Initalizing these to NULL prevents segfaults!</span>
+</span><span class='line'>  <span class="n">AVFormatContext</span>   <span class="o">*</span><span class="n">pFormatCtx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span>               <span class="n">i</span><span class="p">,</span> <span class="n">videoStream</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVCodecContext</span>    <span class="o">*</span><span class="n">pCodecCtxOrig</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVCodecContext</span>    <span class="o">*</span><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVCodec</span>           <span class="o">*</span><span class="n">pCodec</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVFrame</span>           <span class="o">*</span><span class="n">pFrame</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVFrame</span>           <span class="o">*</span><span class="n">pFrameRGB</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVPacket</span>          <span class="n">packet</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span>               <span class="n">frameFinished</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span>               <span class="n">numBytes</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint8_t</span>           <span class="o">*</span><span class="n">buffer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">struct</span> <span class="n">SwsContext</span> <span class="o">*</span><span class="n">sws_ctx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Please provide a movie file</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// Register all formats and codecs</span>
+</span><span class='line'>  <span class="n">av_register_all</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Open video file</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">avformat_open_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Couldn&#39;t open file</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Retrieve stream information</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">avformat_find_stream_info</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Couldn&#39;t find stream information</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Dump information about file onto standard error</span>
+</span><span class='line'>  <span class="n">av_dump_format</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Find the first video stream</span>
+</span><span class='line'>  <span class="n">videoStream</span><span class="o">=-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">nb_streams</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">codec_type</span><span class="o">==</span><span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">videoStream</span><span class="o">=</span><span class="n">i</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">videoStream</span><span class="o">==-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Didn&#39;t find a video stream</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Get a pointer to the codec context for the video stream</span>
+</span><span class='line'>  <span class="n">pCodecCtxOrig</span><span class="o">=</span><span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span><span class='line'>  <span class="c1">// Find the decoder for the video stream</span>
+</span><span class='line'>  <span class="n">pCodec</span><span class="o">=</span><span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">pCodecCtxOrig</span><span class="o">-&gt;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">pCodec</span><span class="o">==</span><span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Unsupported codec!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Codec not found</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// Copy context</span>
+</span><span class='line'>  <span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">pCodec</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">avcodec_copy_context</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodecCtxOrig</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Couldn&#39;t copy codec context&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Error copying codec context</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Open codec</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Could not open codec</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Allocate video frame</span>
+</span><span class='line'>  <span class="n">pFrame</span><span class="o">=</span><span class="n">av_frame_alloc</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Allocate an AVFrame structure</span>
+</span><span class='line'>  <span class="n">pFrameRGB</span><span class="o">=</span><span class="n">av_frame_alloc</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">pFrameRGB</span><span class="o">==</span><span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Determine required buffer size and allocate buffer</span>
+</span><span class='line'>  <span class="n">numBytes</span><span class="o">=</span><span class="n">avpicture_get_size</span><span class="p">(</span><span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">buffer</span><span class="o">=</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">numBytes</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Assign appropriate parts of buffer to image planes in pFrameRGB</span>
+</span><span class='line'>  <span class="c1">// Note that pFrameRGB is an AVFrame, but AVFrame is a superset</span>
+</span><span class='line'>  <span class="c1">// of AVPicture</span>
+</span><span class='line'>  <span class="n">avpicture_fill</span><span class="p">((</span><span class="n">AVPicture</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span>
+</span><span class='line'>       <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// initialize SWS context for software scaling</span>
+</span><span class='line'>  <span class="n">sws_ctx</span> <span class="o">=</span> <span class="n">sws_getContext</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span>
+</span><span class='line'>             <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span>
+</span><span class='line'>             <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">pix_fmt</span><span class="p">,</span>
+</span><span class='line'>             <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span>
+</span><span class='line'>             <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span>
+</span><span class='line'>             <span class="n">PIX_FMT_RGB24</span><span class="p">,</span>
+</span><span class='line'>             <span class="n">SWS_BILINEAR</span><span class="p">,</span>
+</span><span class='line'>             <span class="nb">NULL</span><span class="p">,</span>
+</span><span class='line'>             <span class="nb">NULL</span><span class="p">,</span>
+</span><span class='line'>             <span class="nb">NULL</span>
+</span><span class='line'>             <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Read frames and save first five frames to disk</span>
+</span><span class='line'>  <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="n">av_read_frame</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">)</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Is this a packet from the video stream?</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span><span class="o">==</span><span class="n">videoStream</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Decode video frame</span>
+</span><span class='line'>      <span class="n">avcodec_decode_video2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pFrame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">frameFinished</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Did we get a video frame?</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">frameFinished</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Convert the image from its native format to RGB</span>
+</span><span class='line'>  <span class="n">sws_scale</span><span class="p">(</span><span class="n">sws_ctx</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="k">const</span> <span class="o">*</span> <span class="k">const</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">);</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// Save the frame to disk</span>
+</span><span class='line'>  <span class="c1">//if(++i&lt;=5)</span>
+</span><span class='line'>    <span class="n">SaveFrame</span><span class="p">(</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span>
+</span><span class='line'>          <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>          <span class="n">i</span><span class="o">++</span> <span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Free the packet that was allocated by av_read_frame</span>
+</span><span class='line'>    <span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">sws_freeContext</span><span class="p">(</span><span class="n">sws_ctx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Free the RGB image</span>
+</span><span class='line'>  <span class="n">av_free</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+</span><span class='line'>  <span class="c1">//av_frame_free(&amp;pFrameRGB);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Free the YUV frame</span>
+</span><span class='line'>  <span class="c1">//av_frame_free(&amp;pFrame);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Close the codecs</span>
+</span><span class='line'>  <span class="n">avcodec_close</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">avcodec_close</span><span class="p">(</span><span class="n">pCodecCtxOrig</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Close the video file</span>
+</span><span class='line'>  <span class="n">avformat_close_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pFormatCtx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/ffmpeg_ppm_dumper$ ll
+</span><span class='line'>total 3568
+</span><span class='line'>drwxr-xr-x 2 bramante bramante   12288 Jul 28 00:28 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante    4096 Jul 28 00:15 ../
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 3625204 Jul 21 20:04 demo.ts*
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante    5528 Jul 28 00:12 ffmpeg_ppm_dumper.c*
+</span><span class='line'>bramante@matrix:~/ffmpeg_ppm_dumper$ gcc -g -Wall -o ffmpeg_ppm_dumper ffmpeg_ppm_dumper.c -lavformat -lavcodec -lswscale
+</span><span class='line'>bramante@matrix:~/ffmpeg_ppm_dumper$ ll
+</span><span class='line'>total 3616
+</span><span class='line'>drwxr-xr-x 2 bramante bramante   12288 Jul 28 00:28 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante    4096 Jul 28 00:15 ../
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 3625204 Jul 21 20:04 demo.ts*
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante   47251 Jul 28 00:28 ffmpeg_ppm_dumper*
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante    5528 Jul 28 00:12 ffmpeg_ppm_dumper.c*
+</span><span class='line'>bramante@matrix:~/ffmpeg_ppm_dumper$ ./ffmpeg_ppm_dumper ./demo.ts
+</span><span class='line'>[mpegts @ 0x1c49040] max_analyze_duration reached
+</span><span class='line'>Input #0, mpegts, from './demo.ts':
+</span><span class='line'>  Duration: 00:04:15.18, start: 1.400000, bitrate: 113 kb/s
+</span><span class='line'>  Program 1
+</span><span class='line'>    Metadata:
+</span><span class='line'>      service_name    : Service01
+</span><span class='line'>      service_provider: Libav
+</span><span class='line'>    Stream #0.0[0x100]: Video: mpeg4 (Simple Profile), yuv420p, 640x480 [PAR 1:1 DAR 4:3], 1 fps, 1 tbr, 90k tbn, 1 tbc
+</span><span class='line'>    Stream #0.1[0x101]: Audio: aac, 44100 Hz, stereo, s16, 61 kb/s
+</span><span class='line'>bramante@matrix:~/ffmpeg_ppm_dumper$ ll
+</span><span class='line'>total 235040
+</span><span class='line'>drwxr-xr-x 2 bramante bramante   12288 Jul 28 00:29 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante    4096 Jul 28 00:15 ../
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 3625204 Jul 21 20:04 demo.ts*
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante   47251 Jul 28 00:28 ffmpeg_ppm_dumper*
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante    5528 Jul 28 00:12 ffmpeg_ppm_dumper.c*
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:28 frame00000000.ppm
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:28 frame00000001.ppm
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:28 frame00000002.ppm
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:28 frame00000003.ppm
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:28 frame00000004.ppm
+</span><span class='line'>....
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:29 frame00000252.ppm
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:29 frame00000253.ppm
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:29 frame00000254.ppm
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  921615 Jul 28 00:29 frame00000255.ppm
+</span><span class='line'>bramante@matrix:~/ffmpeg_ppm_dumper$
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>Dump出的*.ppm檔可以用ACDSee開檔來看.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Hook API]]></title>

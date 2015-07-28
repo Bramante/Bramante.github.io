@@ -1,0 +1,69 @@
+---
+layout: post
+title: "Array[0]"
+date: 2015-07-29 00:10:09 +0800
+comments: true
+categories: 
+---
+
+我在用C/C++實作Query API的時候, 喜歡使用array[0]的技巧, 使用這個技巧有2個好處:
+
+1. 動態決定array size, 所以存放record的array不會有record過多而裝不下的困擾, 也不會發生record太少而浪費array空間的問題出現.
+2. Query到資訊是存放在透過malloc()取得的1個memory chunk上, 因此要歸還memory時, 只需直接free()它即可, 不需要為每個Query API都實作一個相對應的歸還memory的API. 
+
+以下是使用array[0]技巧的程式範例:
+
+``` c array.c
+	#include <stdio.h>
+	#include <stdlib.h>
+	
+	struct PERSON_RECORD {
+	  char name[32] ;
+	  int  age ;
+	};
+	typedef struct PERSON_RECORD PERSON_RECORD ;
+	
+	struct FAMILY_INFO {
+	  int recordNum ;
+	  PERSON_RECORD record[0] ;
+	};
+	typedef struct FAMILY_INFO FAMILY_INFO ;
+	
+	FAMILY_INFO* GetFamilyInfo(void)
+	{
+	 int structSize = sizeof(FAMILY_INFO)+(sizeof(PERSON_RECORD)*2) ;
+	 FAMILY_INFO* pInfo = malloc(structSize);
+	 memset( pInfo, 0x00, structSize );
+	 pInfo->recordNum = 2 ;
+	 strncpy( pInfo->record[0].name, "Michael", 32 );
+	 pInfo->record[0].age = 10 ;
+	 strncpy( pInfo->record[1].name, "Bill", 32 );
+	 pInfo->record[1].age = 15 ;
+	 return pInfo ;
+	}
+	
+	int main(void)
+	{
+	 FAMILY_INFO* pInfo ;
+	 pInfo = GetFamilyInfo();
+	 int i ;
+	 for( i = 0 ; i < pInfo->recordNum ; i ++ )
+	    {
+	     printf("[%d] name: %s age: %d\n", i+1, pInfo->record[i].name, pInfo->record[i].age );
+	    }
+	 free(pInfo);
+	 return 0 ;
+	}
+```
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~/array$ gcc -o array array.c
+	bramante@matrix:~/array$ ./array
+	[1] name: Michael age: 10
+	[2] name: Bill age: 15
+	bramante@matrix:~/array$
+```
+</font>
+
+印象中, array[0]這招是我在讀BSD的malloc()演算法時所學到的技巧.

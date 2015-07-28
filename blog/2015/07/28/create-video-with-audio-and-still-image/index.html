@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>How to backup an old computer - Bramante&#x27;s Blog</title>
+  <title>Create video with audio and still image - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,14 +13,8 @@
   
     
   
-  <meta name="description" content="電腦老舊之後, 會買新的電腦取代,
-有些資料很容易從舊電腦搬到新電腦,
-像影音檔之類的檔案, copy是很容易的,
-但是有些像email之類的資料,
-可能會因為email軟體的不同而需要轉檔,
-才能搬到新電腦, 這就很麻煩.
-如果遇到無法轉檔, 或新電腦與舊有軟體存在相容性的問題,
-那該怎麼辦 &hellip;">
+  <meta name="description" content="FFmpeg可以把一個jpeg file的image, 轉成靜態畫面的video file, 並配上聲音, 此外bitrate還可以設得很低. Terminal1
+bramante@matrix:~/video$ ffmpeg -loop 1 -i photo.jpg -i free.mp3 - &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -28,24 +22,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/23/how-to-backup-an-old-computer/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/28/create-video-with-audio-and-still-image/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="How to backup an old computer" />
-  <meta name="og:description" content="電腦老舊之後, 會買新的電腦取代,
-有些資料很容易從舊電腦搬到新電腦,
-像影音檔之類的檔案, copy是很容易的,
-但是有些像email之類的資料,
-可能會因為email軟體的不同而需要轉檔,
-才能搬到新電腦, 這就很麻煩.
-如果遇到無法轉檔, 或新電腦與舊有軟體存在相容性的問題,
-那該怎麼辦 &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/23/how-to-backup-an-old-computer/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/07/23/how-to-backup-an-old-computer/">
+  <meta name="og:title" content="Create video with audio and still image" />
+  <meta name="og:description" content="FFmpeg可以把一個jpeg file的image, 轉成靜態畫面的video file, 並配上聲音, 此外bitrate還可以設得很低. Terminal1
+bramante@matrix:~/video$ ffmpeg -loop 1 -i photo.jpg -i free.mp3 - &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/28/create-video-with-audio-and-still-image/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/07/28/create-video-with-audio-and-still-image/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -92,7 +80,7 @@
   <header>
     
       
-        <h1 class="entry-title">How to Backup an Old Computer</h1>
+        <h1 class="entry-title">Create Video With Audio and Still Image</h1>
       
     
     
@@ -118,7 +106,7 @@
   
 
 
-<time datetime="2015-07-23T23:33:04+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-07-28T09:40:15+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -130,28 +118,17 @@
   </header>
 
 
-  <div class="entry-content"><p>電腦老舊之後, 會買新的電腦取代,
-有些資料很容易從舊電腦搬到新電腦,
-像影音檔之類的檔案, copy是很容易的,
-但是有些像email之類的資料,
-可能會因為email軟體的不同而需要轉檔,
-才能搬到新電腦, 這就很麻煩.
-如果遇到無法轉檔, 或新電腦與舊有軟體存在相容性的問題,
-那該怎麼辦?</p>
+  <div class="entry-content"><p>FFmpeg可以把一個jpeg file的image, 轉成靜態畫面的video file, 並配上聲音, 此外bitrate還可以設得很低.</p>
 
-<p>有個方法可以解決這個問題,
-就是把舊電腦給虛擬化,
-把它轉成vmware image,
-讓它擺脫老舊的硬體,
-在新電腦裡繼續存活下去,
-這樣還有個好處, 就是不用擔心有資料忘了copy出來,
-因為所有的內容都還在vmware image裡.</p>
+<p><font face="sans"></p>
 
-<p>Windows可以使用 VMware vCenter Converter 直接把電腦虛擬化,
-Linux則可以使用 MondoRescue, 先把電腦轉換成Rescue Image,
-然後再把Rescue Image &ldquo;還原&#8221;到vmware image上進行虛擬化,
-這2套軟體都是免費的, create vmware image有免費軟體可用,
-vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.</p>
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/video$ ffmpeg -loop 1 -i photo.jpg -i free.mp3 -vcodec mpeg4 -acodec aac -strict experimental -s 640x480 -pix_fmt yuv420p -vb 16k -r 1 -ab 64k -shortest -f mpegts demo.ts</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>免費配樂可以到YouTube Audio Library去找, 就我的理解, 應該可以免費使用, 而且不限定是製做YouTube Video.</p>
 </div>
 
 
@@ -182,7 +159,7 @@ vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.<
   
 
 
-<time datetime="2015-07-23T23:33:04+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-07-28T09:40:15+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -190,7 +167,7 @@ vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.<
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/23/how-to-backup-an-old-computer/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/23/how-to-backup-an-old-computer/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/28/create-video-with-audio-and-still-image/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/28/create-video-with-audio-and-still-image/" >Tweet</a>
   
   
   
@@ -198,10 +175,8 @@ vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.<
 
     
     
-      <a class="pull-left" href="/blog/2015/07/22/ttf2png/" title="Previous Post: ttf2png">&laquo; ttf2png</a>
+      <a class="pull-left" href="/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg/" title="Previous Post: Extract images from a Video using FFmpeg">&laquo; Extract images from a Video using FFmpeg</a>
     
-    
-      <a class="pull-right" href="/blog/2015/07/25/determine-cpu-endianness-at-runtime/" title="Next Post: Determine CPU endianness at runtime">Determine CPU endianness at runtime &raquo;</a>
     
   </footer>
 
@@ -299,8 +274,8 @@ vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.<
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F23%2Fhow-to-backup-an-old-computer%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F23%2Fhow-to-backup-an-old-computer%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F28%2Fcreate-video-with-audio-and-still-image%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F28%2Fcreate-video-with-audio-and-still-image%2F';
         var disqus_script = 'embed.js';
       
     (function () {

@@ -126,6 +126,72 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/07/28/create-video-with-audio-and-still-image/">Create Video With Audio and Still Image</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-28T09:40:15+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/07/28/create-video-with-audio-and-still-image/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>FFmpeg可以把一個jpeg file的image, 轉成靜態畫面的video file, 並配上聲音, 此外bitrate還可以設得很低.</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/video$ ffmpeg -loop 1 -i photo.jpg -i free.mp3 -vcodec mpeg4 -acodec aac -strict experimental -s 640x480 -pix_fmt yuv420p -vb 16k -r 1 -ab 64k -shortest -f mpegts demo.ts</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>免費配樂可以到YouTube Audio Library去找, 就我的理解, 應該可以免費使用, 而且不限定是製做YouTube Video.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg/">Extract Images From a Video Using FFmpeg</a></h1>
         
     
@@ -993,7 +1059,7 @@ vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.<
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/07/22/ttf2png/">　ttf2png</a></h1>
+        <h1 class="entry-title"><a href="/blog/2015/07/22/ttf2png/">Ttf2png</a></h1>
         
     
     
@@ -1411,6 +1477,10 @@ Ctrl + break  放開再按  t
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/07/28/create-video-with-audio-and-still-image/">Create video with audio and still image</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg/">Extract images from a Video using FFmpeg</a>
         </li>
       
@@ -1424,10 +1494,6 @@ Ctrl + break  放開再按  t
       
         <li>
           <a href="/blog/2015/07/23/how-to-backup-an-old-computer/">How to backup an old computer</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/07/22/ttf2png/">　ttf2png</a>
         </li>
       
     </ul>

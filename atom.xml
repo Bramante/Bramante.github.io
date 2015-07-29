@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-07-30T00:13:29+08:00</updated>
+  <updated>2015-07-30T00:37:29+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,21 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Turn ON/OFF WIFI via ADB]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/"/>
+    <updated>2015-07-30T00:29:22+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/30/turn-on-slash-off-wifi-via-adb</id>
+    <content type="html"><![CDATA[<p>在Android平台上, 可以透過在command line執行svc command來開關WIFI.</p>
+
+<pre><code>adb shell svc wifi enable
+adb shell svc wifi disable
+</code></pre>
+
+<p>執行command後, setting APK上的UI也會同步反應WIFI的開關狀態.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Builtin Return Address]]></title>

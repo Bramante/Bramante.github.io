@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Hook API - Bramante&#x27;s Blog</title>
+  <title>Builtin Return Address - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,21 +13,12 @@
   
     
   
-  <meta name="description" content="在debug時, Hook API可以提供programmer API被call的資訊, 是個相當實用的技巧. 不定參數的API也是可以hook的, 而且這個方法在x86, MIPS, ARM 上都可以順利使用. hook.c1
+  <meta name="description" content="在debug時, 若想知道是哪裡的code來call了某個API,
+可以把__builtin_return_address(0)的value給印出來,
+然後再透過addr2line查出line number. 下面的範例是追查哪裡的code去call了funcA(). ret.c1
 2
 3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15 &hellip;">
+4 &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -35,31 +26,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/25/hook-api/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/29/builtin-return-address-n/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="Hook API" />
-  <meta name="og:description" content="在debug時, Hook API可以提供programmer API被call的資訊, 是個相當實用的技巧. 不定參數的API也是可以hook的, 而且這個方法在x86, MIPS, ARM 上都可以順利使用. hook.c1
+  <meta name="og:title" content="Builtin Return Address" />
+  <meta name="og:description" content="在debug時, 若想知道是哪裡的code來call了某個API,
+可以把__builtin_return_address(0)的value給印出來,
+然後再透過addr2line查出line number. 下面的範例是追查哪裡的code去call了funcA(). ret.c1
 2
 3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15 &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/25/hook-api/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/07/25/hook-api/">
+4 &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/29/builtin-return-address-n/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/07/29/builtin-return-address-n/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -106,7 +88,7 @@
   <header>
     
       
-        <h1 class="entry-title">Hook API</h1>
+        <h1 class="entry-title">Builtin Return Address</h1>
       
     
     
@@ -132,7 +114,7 @@
   
 
 
-<time datetime="2015-07-25T23:56:40+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-07-29T23:43:20+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -144,9 +126,13 @@
   </header>
 
 
-  <div class="entry-content"><p>在debug時, Hook API可以提供programmer API被call的資訊, 是個相當實用的技巧. 不定參數的API也是可以hook的, 而且這個方法在x86, MIPS, ARM 上都可以順利使用.</p>
+  <div class="entry-content"><p>在debug時, 若想知道是哪裡的code來call了某個API,
+可以把__builtin_return_address(0)的value給印出來,
+然後再透過addr2line查出line number.</p>
 
-<figure class='code'><figcaption><span>hook.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p>下面的範例是追查哪裡的code去call了funcA().</p>
+
+<figure class='code'><figcaption><span>ret.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -158,46 +144,18 @@
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
 <span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdarg.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span> <span class="o">*</span> <span class="nf">__wrap_malloc</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">size</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;my malloc(size: %d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="n">__real_malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">__wrap_printf</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">format</span><span class="p">,</span> <span class="p">...)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">puts</span><span class="p">(</span><span class="s">&quot;my printf !!&quot;</span><span class="p">);</span>
-</span><span class='line'> <span class="kt">va_list</span> <span class="n">args</span><span class="p">;</span>
-</span><span class='line'> <span class="n">va_start</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">format</span><span class="p">);</span>
-</span><span class='line'> <span class="n">vprintf</span><span class="p">(</span><span class="n">format</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
-</span><span class='line'> <span class="n">va_end</span><span class="p">(</span><span class="n">args</span><span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="kt">void</span><span class="o">*</span> <span class="n">ptr</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'> <span class="n">free</span><span class="p">(</span><span class="n">ptr</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>     <span class="mi">1</span>  <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+</span><span class='line'>     <span class="mi">2</span>
+</span><span class='line'>     <span class="mi">3</span>  <span class="kt">void</span> <span class="n">funcA</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'>     <span class="mi">4</span>  <span class="p">{</span>
+</span><span class='line'>     <span class="mi">5</span>   <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ret:0x%08x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
+</span><span class='line'>     <span class="mi">6</span>  <span class="p">}</span>
+</span><span class='line'>     <span class="mi">7</span>
+</span><span class='line'>     <span class="mi">8</span>  <span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'>     <span class="mi">9</span>  <span class="p">{</span>
+</span><span class='line'>    <span class="mi">10</span>   <span class="n">funcA</span><span class="p">();</span>
+</span><span class='line'>    <span class="mi">11</span>   <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'>    <span class="mi">12</span>  <span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -208,14 +166,63 @@
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/hook$ gcc -Wl,--wrap,malloc -Wl,--wrap,printf -o hook hook.c -lc
-</span><span class='line'>bramante@matrix:~/hook$ ./hook
-</span><span class='line'>my printf !!
-</span><span class='line'>my malloc(size: 10)
-</span><span class='line'>bramante@matrix:~/hook$ </span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ret ret.c
+</span><span class='line'>bramante@matrix:~/test$ ./ret
+</span><span class='line'>ret:0x0040051f
+</span><span class='line'>bramante@matrix:~/test$ addr2line -Cfe ./ret 40051f
+</span><span class='line'>main
+</span><span class='line'>/home/bramante/test/ret.c:11
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>
+
+<p>addr2line查到的line number是執行完該API後的下一行,
+如果想得到call API的那行的line number,
+可以把address減1之後再查line number.</p>
+
+<p>例如, 0x40051f - 1 = 0x40051e, 然後查0x40051e的line number.</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ addr2line -Cfe ./ret 40051e
+</span><span class='line'>main
+</span><span class='line'>/home/bramante/test/ret.c:10
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>x86對 __builtin_return_address(n)的支援相當完整,
+幾乎可以當成backtrace()來用,
+MIPS和ARM對 __builtin_return_address()的支援則相當有限,
+只支援了 __builtin_return_address(0),
+而且還必需在API內的第一行就取值,
+不然有可能會出錯.</p>
+
+<p>在MIPS或ARM上, __builtin_return_address(0)要放在funcA()開頭的第一行,
+才能確保得到的return address的value是正確的.</p>
+
+<figure class='code'><figcaption><span>funcA()</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">funcA</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span> <span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">;</span><span class="c1">//必須在API開頭的第一行就取值</span>
+</span><span class='line'> <span class="p">....</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ret:0x%08x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">ret</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
@@ -246,7 +253,7 @@
   
 
 
-<time datetime="2015-07-25T23:56:40+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-07-29T23:43:20+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -254,7 +261,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/25/hook-api/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/25/hook-api/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/29/builtin-return-address-n/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/29/builtin-return-address-n/" >Tweet</a>
   
   
   
@@ -262,10 +269,8 @@
 
     
     
-      <a class="pull-left" href="/blog/2015/07/25/determine-cpu-endianness-at-runtime/" title="Previous Post: Determine CPU endianness at runtime">&laquo; Determine CPU endianness at runtime</a>
+      <a class="pull-left" href="/blog/2015/07/29/array-0/" title="Previous Post: Array[0]">&laquo; Array[0]</a>
     
-    
-      <a class="pull-right" href="/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg/" title="Next Post: Extract images from a Video using FFmpeg">Extract images from a Video using FFmpeg &raquo;</a>
     
   </footer>
 
@@ -363,8 +368,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F25%2Fhook-api%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F25%2Fhook-api%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F29%2Fbuiltin-return-address-n%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F29%2Fbuiltin-return-address-n%2F';
         var disqus_script = 'embed.js';
       
     (function () {

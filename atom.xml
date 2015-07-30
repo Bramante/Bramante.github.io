@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-07-31T00:28:04+08:00</updated>
+  <updated>2015-07-31T00:47:56+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,20 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Kill Process by Name]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/31/kill-process-by-name/"/>
+    <updated>2015-07-31T00:35:50+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/31/kill-process-by-name</id>
+    <content type="html"><![CDATA[<p>在使用busybox的嵌入式系統上, 若因bug導致log狂印, 有時會想砍掉這個狂印log的process, 以便後續能操作console進行debug. 此時由於log處於狂印的狀態, 若使用ps查詢kill所需的pid時, 往往會很難看到想看的內容, 此時若能kill process by name把狂印log的process給砍掉會很方便.</p>
+
+<p>假設要砍掉的process name叫做Application的話, 我都是用下面這樣的一串command來做到kill process by name的:</p>
+
+<pre><code>kill -9 $(/bin/busybox ps -eo pid,comm | grep Application | sed 's/Application//g')
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Remove Blank Lines]]></title>

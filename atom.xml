@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-07-30T23:57:45+08:00</updated>
+  <updated>2015-07-31T00:28:04+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,24 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Remove Blank Lines]]></title>
+    <link href="http://Bramante.github.io/blog/2015/07/31/remove-blank-lines/"/>
+    <updated>2015-07-31T00:12:12+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/07/31/remove-blank-lines</id>
+    <content type="html"><![CDATA[<p>使用UltraEdit要怎麼刪除空行呢?</p>
+
+<p>在Replace時, 勾選Regular Expressions的功能, 照下圖這樣輸入, 便可刪除空行.</p>
+
+<p><img class="left" src="http://Bramante.github.io/images/2015-07-31-remove-blank-lines/replace.jpg" title="replace.jpg" ></p>
+
+<pre><code>%[ ^t]++^p
+</code></pre>
+
+<p>這個功能我通常用在寫工作日誌的時候, 這樣可以讓日誌的source code內容看起來比較緊湊.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Turn ON/OFF WIFI via ADB]]></title>

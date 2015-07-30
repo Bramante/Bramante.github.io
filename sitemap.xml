@@ -3,6 +3,14 @@
   
   
   <url>
+    <loc>http://Bramante.github.io/blog/2015/07/31/remove-blank-lines/</loc>
+    
+    <lastmod>2015-07-31T00:12:12+08:00</lastmod>
+    
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://Bramante.github.io/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/</loc>
     
     <lastmod>2015-07-30T00:29:22+08:00</lastmod>
@@ -93,14 +101,14 @@
   
   <url>
     <loc>http://Bramante.github.io/blog/archives/</loc>
-    <lastmod>2015-07-30T23:57:45+08:00</lastmod>
+    <lastmod>2015-07-31T00:28:04+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://Bramante.github.io/</loc>
-    <lastmod>2015-07-30T23:57:45+08:00</lastmod>
+    <lastmod>2015-07-31T00:28:04+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>

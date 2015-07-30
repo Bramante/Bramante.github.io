@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Dump Kernel Callstack - Bramante&#x27;s Blog</title>
+  <title>Remove Blank Lines - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,10 +13,7 @@
   
     
   
-  <meta name="description" content="在Console Dump Kernel的Callstack很簡單,
-只要執行下列的Command即可印出所有Task的Callstack: echo 1 &gt; /proc/sys/kernel/sysrq
-echo 9 &gt; /proc/sys/kernel/printk
-echo " &hellip;">
+  <meta name="description" content=" 使用UltraEdit要怎麼刪除空行呢? 在Replace時, 勾選Regular Expressions的功能, 照下圖這樣輸入, 便可刪除空行. %[ ^t]++^p 這個功能我通常用在寫工作日誌的時候, 這樣可以讓日誌的source code內容看起來比較緊湊. ">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -24,20 +21,17 @@ echo " &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/31/remove-blank-lines/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="Dump Kernel Callstack" />
-  <meta name="og:description" content="在Console Dump Kernel的Callstack很簡單,
-只要執行下列的Command即可印出所有Task的Callstack: echo 1 &gt; /proc/sys/kernel/sysrq
-echo 9 &gt; /proc/sys/kernel/printk
-echo " &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/">
+  <meta name="og:title" content="Remove Blank Lines" />
+  <meta name="og:description" content=" 使用UltraEdit要怎麼刪除空行呢? 在Replace時, 勾選Regular Expressions的功能, 照下圖這樣輸入, 便可刪除空行. %[ ^t]++^p 這個功能我通常用在寫工作日誌的時候, 這樣可以讓日誌的source code內容看起來比較緊湊. " />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/31/remove-blank-lines/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/07/31/remove-blank-lines/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -84,7 +78,7 @@ echo " &hellip;" />
   <header>
     
       
-        <h1 class="entry-title">Dump Kernel Callstack</h1>
+        <h1 class="entry-title">Remove Blank Lines</h1>
       
     
     
@@ -110,7 +104,7 @@ echo " &hellip;" />
   
 
 
-<time datetime="2015-07-21T00:45:38+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-07-31T00:12:12+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -122,31 +116,16 @@ echo " &hellip;" />
   </header>
 
 
-  <div class="entry-content"><p>在Console Dump Kernel的Callstack很簡單,
-只要執行下列的Command即可印出所有Task的Callstack:</p>
+  <div class="entry-content"><p>使用UltraEdit要怎麼刪除空行呢?</p>
 
-<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
-echo 9 &gt; /proc/sys/kernel/printk
-echo "t" &gt; /proc/sysrq-trigger
+<p>在Replace時, 勾選Regular Expressions的功能, 照下圖這樣輸入, 便可刪除空行.</p>
+
+<p><img class="left" src="/images/2015-07-31-remove-blank-lines/replace.jpg" title="replace.jpg" ></p>
+
+<pre><code>%[ ^t]++^p
 </code></pre>
 
-<p>如果Hot Key有用的話, 也可以用Hot Key觸發:</p>
-
-<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
-echo 9 &gt; /proc/sys/kernel/printk
-Ctrl + break  放開再按  t
-</code></pre>
-
-<p>如果想在Kernel的code裡印出Callstack, 了解Function怎麼被Call到的,
-可以call dump_stack(), 如果想一併了解Task Name與PID,
-可以印出current的comm與pid:</p>
-
-<figure class='code'><figcaption><span>Dump Stack</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">printk</span><span class="p">(</span><span class="s">&quot;task name: %s, pid: %d </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">pid</span><span class="p">);</span>
-</span><span class='line'><span class="n">dump_stack</span><span class="p">();</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<p>這個功能我通常用在寫工作日誌的時候, 這樣可以讓日誌的source code內容看起來比較緊湊.</p>
 </div>
 
 
@@ -177,7 +156,7 @@ Ctrl + break  放開再按  t
   
 
 
-<time datetime="2015-07-21T00:45:38+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-07-31T00:12:12+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -185,7 +164,7 @@ Ctrl + break  放開再按  t
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/21/dump-kernel-callstack/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/31/remove-blank-lines/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/31/remove-blank-lines/" >Tweet</a>
   
   
   
@@ -193,10 +172,8 @@ Ctrl + break  放開再按  t
 
     
     
-      <a class="pull-left" href="/blog/2015/07/12/hello-world/" title="Previous Post: Hello World">&laquo; Hello World</a>
+      <a class="pull-left" href="/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/" title="Previous Post: Turn ON/OFF WIFI via ADB">&laquo; Turn ON/OFF WIFI via ADB</a>
     
-    
-      <a class="pull-right" href="/blog/2015/07/22/ttf2png/" title="Next Post: ttf2png">ttf2png &raquo;</a>
     
   </footer>
 
@@ -294,8 +271,8 @@ Ctrl + break  放開再按  t
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F21%2Fdump-kernel-callstack%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F21%2Fdump-kernel-callstack%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F31%2Fremove-blank-lines%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F31%2Fremove-blank-lines%2F';
         var disqus_script = 'embed.js';
       
     (function () {

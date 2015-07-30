@@ -126,6 +126,71 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/07/31/remove-blank-lines/">Remove Blank Lines</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-31T00:12:12+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/07/31/remove-blank-lines/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>使用UltraEdit要怎麼刪除空行呢?</p>
+
+<p>在Replace時, 勾選Regular Expressions的功能, 照下圖這樣輸入, 便可刪除空行.</p>
+
+<p><img class="left" src="/images/2015-07-31-remove-blank-lines/replace.jpg" title="replace.jpg" ></p>
+
+<pre><code>%[ ^t]++^p
+</code></pre>
+
+<p>這個功能我通常用在寫工作日誌的時候, 這樣可以讓日誌的source code內容看起來比較緊湊.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/">Turn ON/OFF WIFI via ADB</a></h1>
         
     
@@ -1658,86 +1723,6 @@ vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.<
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/07/21/dump-kernel-callstack/">Dump Kernel Callstack</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-07-21T00:45:38+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/07/21/dump-kernel-callstack/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在Console Dump Kernel的Callstack很簡單,
-只要執行下列的Command即可印出所有Task的Callstack:</p>
-
-<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
-echo 9 &gt; /proc/sys/kernel/printk
-echo "t" &gt; /proc/sysrq-trigger
-</code></pre>
-
-<p>如果Hot Key有用的話, 也可以用Hot Key觸發:</p>
-
-<pre><code>echo 1 &gt; /proc/sys/kernel/sysrq
-echo 9 &gt; /proc/sys/kernel/printk
-Ctrl + break  放開再按  t
-</code></pre>
-
-<p>如果想在Kernel的code裡印出Callstack, 了解Function怎麼被Call到的,
-可以call dump_stack(), 如果想一併了解Task Name與PID,
-可以印出current的comm與pid:</p>
-
-<figure class='code'><figcaption><span>Dump Stack</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">printk</span><span class="p">(</span><span class="s">&quot;task name: %s, pid: %d </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">pid</span><span class="p">);</span>
-</span><span class='line'><span class="n">dump_stack</span><span class="p">();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -1755,6 +1740,10 @@ Ctrl + break  放開再按  t
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/07/31/remove-blank-lines/">Remove Blank Lines</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/">Turn ON/OFF WIFI via ADB</a>
         </li>
       
@@ -1768,10 +1757,6 @@ Ctrl + break  放開再按  t
       
         <li>
           <a href="/blog/2015/07/28/create-video-with-audio-and-still-image/">Create video with audio and still image</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg/">Extract images from a Video using FFmpeg</a>
         </li>
       
     </ul>

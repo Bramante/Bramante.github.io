@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Hook API - Bramante&#x27;s Blog</title>
+  <title>nanosleep - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,7 +13,7 @@
   
     
   
-  <meta name="description" content="在debug時, Hook API可以提供programmer API被call的資訊, 是個相當實用的技巧. 不定參數的API也是可以hook的, 而且這個方法在x86, MIPS, ARM 上都可以順利使用. hook.c1
+  <meta name="description" content="在nanosleep()的說明裡, 有提到它可能會被signal handler所打斷. Terminal1
 2
 3
 4
@@ -27,7 +27,27 @@
 12
 13
 14
-15 &hellip;">
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35 &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -35,15 +55,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/25/hook-api/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/06/nanosleep/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="Hook API" />
-  <meta name="og:description" content="在debug時, Hook API可以提供programmer API被call的資訊, 是個相當實用的技巧. 不定參數的API也是可以hook的, 而且這個方法在x86, MIPS, ARM 上都可以順利使用. hook.c1
+  <meta name="og:title" content="nanosleep" />
+  <meta name="og:description" content="在nanosleep()的說明裡, 有提到它可能會被signal handler所打斷. Terminal1
 2
 3
 4
@@ -57,9 +77,29 @@
 12
 13
 14
-15 &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/25/hook-api/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/07/25/hook-api/">
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35 &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/06/nanosleep/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/08/06/nanosleep/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -106,7 +146,7 @@
   <header>
     
       
-        <h1 class="entry-title">Hook API</h1>
+        <h1 class="entry-title">Nanosleep</h1>
       
     
     
@@ -132,7 +172,7 @@
   
 
 
-<time datetime="2015-07-25T23:56:40+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-06T00:16:39+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -144,9 +184,11 @@
   </header>
 
 
-  <div class="entry-content"><p>在debug時, Hook API可以提供programmer API被call的資訊, 是個相當實用的技巧. 不定參數的API也是可以hook的, 而且這個方法在x86, MIPS, ARM 上都可以順利使用.</p>
+  <div class="entry-content"><p>在nanosleep()的說明裡, 有提到它可能會被signal handler所打斷.</p>
 
-<figure class='code'><figcaption><span>hook.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -172,50 +214,89 @@
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdarg.h&gt;</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>NANOSLEEP(2)                                                         Linux Programmer's Manual                                                         NANOSLEEP(2)
 </span><span class='line'>
-</span><span class='line'><span class="kt">void</span> <span class="o">*</span> <span class="nf">__wrap_malloc</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">size</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;my malloc(size: %d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="n">__real_malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
+</span><span class='line'>NAME
+</span><span class='line'>       nanosleep - high-resolution sleep
 </span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">__wrap_printf</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">format</span><span class="p">,</span> <span class="p">...)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">puts</span><span class="p">(</span><span class="s">&quot;my printf !!&quot;</span><span class="p">);</span>
-</span><span class='line'> <span class="kt">va_list</span> <span class="n">args</span><span class="p">;</span>
-</span><span class='line'> <span class="n">va_start</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">format</span><span class="p">);</span>
-</span><span class='line'> <span class="n">vprintf</span><span class="p">(</span><span class="n">format</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
-</span><span class='line'> <span class="n">va_end</span><span class="p">(</span><span class="n">args</span><span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
+</span><span class='line'>SYNOPSIS
+</span><span class='line'>       #include &lt;time.h&gt;
 </span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="kt">void</span><span class="o">*</span> <span class="n">ptr</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'> <span class="n">free</span><span class="p">(</span><span class="n">ptr</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>       int nanosleep(const struct timespec *req, struct timespec *rem);
+</span><span class='line'>
+</span><span class='line'>   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
+</span><span class='line'>
+</span><span class='line'>       nanosleep(): _POSIX_C_SOURCE &gt;= 199309L
+</span><span class='line'>
+</span><span class='line'>DESCRIPTION
+</span><span class='line'>       nanosleep()  suspends  the  execution  of  the calling thread until either at least the time specified in *req has elapsed, or the delivery of a signal that
+</span><span class='line'>       triggers the invocation of a handler in the calling thread or that terminates the process.
+</span><span class='line'>
+</span><span class='line'>       If the call is interrupted by a signal handler, nanosleep() returns -1, sets errno to EINTR, and writes the remaining time into the structure pointed to  by
+</span><span class='line'>       rem unless rem is NULL.  The value of *rem can then be used to call nanosleep() again and complete the specified pause (but see NOTES).
+</span><span class='line'>
+</span><span class='line'>       The structure timespec is used to specify intervals of time with nanosecond precision.  It is defined as follows:
+</span><span class='line'>
+</span><span class='line'>           struct timespec {
+</span><span class='line'>               time_t tv_sec;        /* seconds */
+</span><span class='line'>               long   tv_nsec;       /* nanoseconds */
+</span><span class='line'>           };
+</span><span class='line'>
+</span><span class='line'>       The value of the nanoseconds field must be in the range 0 to 999999999.
+</span><span class='line'>
+</span><span class='line'>       Compared  to  sleep(3)  and  usleep(3), nanosleep() has the following advantages: it provides a higher resolution for specifying the sleep interval; POSIX.1
+</span><span class='line'>       explicitly specifies that it does not interact with signals; and it makes the task of resuming a sleep that has been interrupted by a signal handler easier.
+</span><span class='line'>
+</span><span class='line'>RETURN VALUE
+</span><span class='line'>       On successfully sleeping for the requested interval, nanosleep() returns 0.  If the call is interrupted by a signal handler or encounters an error, then  it
+</span><span class='line'>       returns -1, with errno set to indicate the error.</span></code></pre></td></tr></table></div></figure>
 
 
-<p><font face="sans"></p>
+<p></font></p>
 
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p>如果沒有考量到nanosleep()被signal handler打斷的狀況, sleep的時間有可能會達不到預期的長度. Random發生沒有sleep到充足時間, 有可能會造成程式發生random的bug, 因此不要小看這個問題.</p>
+
+<figure class='code'><figcaption><span>錯誤的用法</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/hook$ gcc -Wl,--wrap,malloc -Wl,--wrap,printf -o hook hook.c -lc
-</span><span class='line'>bramante@matrix:~/hook$ ./hook
-</span><span class='line'>my printf !!
-</span><span class='line'>my malloc(size: 10)
-</span><span class='line'>bramante@matrix:~/hook$ </span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define MY_SLEEP(ms) {\</span>
+</span><span class='line'><span class="cp">         struct timespec delay ;\</span>
+</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
+</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
+</span><span class='line'><span class="cp">         nanosleep(&amp;delay,NULL) ;\</span>
+</span><span class='line'><span class="cp">        }</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p></font></p>
+<p>正確的用法應該如下, 才能確保sleep的時間達到預期的要求.</p>
+
+<figure class='code'><figcaption><span>正確的用法</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define MY_SLEEP(ms) {\</span>
+</span><span class='line'><span class="cp">         struct timespec delay, rem ;\</span>
+</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
+</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
+</span><span class='line'><span class="cp">         while(nanosleep(&amp;delay, &amp;rem) == -1 &amp;&amp; errno == EINTR) delay = rem;\</span>
+</span><span class='line'><span class="cp">        } </span>
+</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
@@ -246,7 +327,7 @@
   
 
 
-<time datetime="2015-07-25T23:56:40+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-06T00:16:39+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -254,7 +335,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/25/hook-api/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/25/hook-api/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/06/nanosleep/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/06/nanosleep/" >Tweet</a>
   
   
   
@@ -262,10 +343,8 @@
 
     
     
-      <a class="pull-left" href="/blog/2015/07/25/determine-cpu-endianness-at-runtime/" title="Previous Post: Determine CPU endianness at runtime">&laquo; Determine CPU endianness at runtime</a>
+      <a class="pull-left" href="/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/" title="Previous Post: Getting the backtrace for all the threads in GDB">&laquo; Getting the backtrace for all the threads in GDB</a>
     
-    
-      <a class="pull-right" href="/blog/2015/07/27/extract-images-from-a-video-using-ffmpeg/" title="Next Post: Extract images from a Video using FFmpeg">Extract images from a Video using FFmpeg &raquo;</a>
     
   </footer>
 
@@ -363,8 +442,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F25%2Fhook-api%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F25%2Fhook-api%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F06%2Fnanosleep%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F06%2Fnanosleep%2F';
         var disqus_script = 'embed.js';
       
     (function () {

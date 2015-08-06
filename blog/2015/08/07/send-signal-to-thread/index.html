@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Getting the backtrace for all the threads in GDB - Bramante&#x27;s Blog</title>
+  <title>Send signal to thread - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,7 +13,25 @@
   
     
   
-  <meta name="description" content="在嵌入式系統上debug, 有時gdb的運作不是很可靠, 可能會遇到執行幾個指令之後就無法再繼續用的情形, 如果正在處理multi-thread hang住的bug, 那可麻煩了, 可能bt沒幾個thread的callstack, gdb就沒辦法再用了, 這時改用"thread apply &hellip;">
+  <meta name="description" content="使用pthread_kill()發signal給thread, 可以做到在run-time去調整thread的行為, 下面這個範例是發signal給thread, 把thread給結束掉. test.c1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19 &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -21,17 +39,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/07/send-signal-to-thread/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="Getting the backtrace for all the threads in GDB" />
-  <meta name="og:description" content="在嵌入式系統上debug, 有時gdb的運作不是很可靠, 可能會遇到執行幾個指令之後就無法再繼續用的情形, 如果正在處理multi-thread hang住的bug, 那可麻煩了, 可能bt沒幾個thread的callstack, gdb就沒辦法再用了, 這時改用"thread apply &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/">
+  <meta name="og:title" content="Send signal to thread" />
+  <meta name="og:description" content="使用pthread_kill()發signal給thread, 可以做到在run-time去調整thread的行為, 下面這個範例是發signal給thread, 把thread給結束掉. test.c1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19 &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/07/send-signal-to-thread/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/08/07/send-signal-to-thread/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -78,7 +114,7 @@
   <header>
     
       
-        <h1 class="entry-title">Getting the Backtrace for All the Threads in GDB</h1>
+        <h1 class="entry-title">Send Signal to Thread</h1>
       
     
     
@@ -104,7 +140,7 @@
   
 
 
-<time datetime="2015-08-04T23:57:27+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-07T00:39:25+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -116,7 +152,7 @@
   </header>
 
 
-  <div class="entry-content"><p>在嵌入式系統上debug, 有時gdb的運作不是很可靠, 可能會遇到執行幾個指令之後就無法再繼續用的情形, 如果正在處理multi-thread hang住的bug, 那可麻煩了, 可能bt沒幾個thread的callstack, gdb就沒辦法再用了, 這時改用&#8221;thread apply all bt&#8221;是最佳的選擇, 使用一行command就可以把所有thread的callstack都給dump出來.</p>
+  <div class="entry-content"><p>使用pthread_kill()發signal給thread, 可以做到在run-time去調整thread的行為, 下面這個範例是發signal給thread, 把thread給結束掉.</p>
 
 <figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -165,25 +201,58 @@
 <span class='line-number'>45</span>
 <span class='line-number'>46</span>
 <span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
 </span><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;signal.h&gt;</span>
 </span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;errno.h&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="cp">#define THREAD_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay ;\</span>
+</span><span class='line'><span class="cp">         struct timespec delay, rem ;\</span>
 </span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
 </span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         nanosleep(&amp;delay,NULL) ;\</span>
-</span><span class='line'><span class="cp">        }</span>
+</span><span class='line'><span class="cp">         while(nanosleep(&amp;delay, &amp;rem) == -1 &amp;&amp; errno == EINTR) delay = rem;\</span>
+</span><span class='line'><span class="cp">        }         </span>
 </span><span class='line'>
 </span><span class='line'><span class="kt">pthread_t</span> <span class="n">th1</span> <span class="p">;</span>
 </span><span class='line'><span class="kt">pthread_t</span> <span class="n">th2</span> <span class="p">;</span>
 </span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">signalHandler</span><span class="p">(</span><span class="kt">int</span> <span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">signalHandler</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">signalHandler(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
+</span><span class='line'> <span class="n">pthread_exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
 </span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
 </span><span class='line'><span class="p">{</span>
 </span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction1(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction1</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 </span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>       <span class="n">printf</span><span class="p">(</span><span class="s">&quot;1&quot;</span><span class="p">);</span>
 </span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
 </span><span class='line'>      <span class="p">}</span>
 </span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
@@ -192,8 +261,10 @@
 </span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
 </span><span class='line'><span class="p">{</span>
 </span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction2(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 </span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>       <span class="n">printf</span><span class="p">(</span><span class="s">&quot;2&quot;</span><span class="p">);</span>
 </span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
 </span><span class='line'>      <span class="p">}</span>
 </span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
@@ -202,14 +273,19 @@
 </span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 </span><span class='line'><span class="p">{</span>
 </span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">main(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
+</span><span class='line'> <span class="k">struct</span> <span class="n">sigaction</span> <span class="n">newact</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">newact</span><span class="p">.</span><span class="n">sa_handler</span> <span class="o">=</span> <span class="n">signalHandler</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">sigaction</span><span class="p">(</span><span class="n">SIGALRM</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">newact</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
 </span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
 </span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'> <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'> <span class="n">pthread_kill</span><span class="p">(</span> <span class="n">th1</span><span class="p">,</span> <span class="n">SIGALRM</span> <span class="p">);</span>
 </span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">join1</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'> <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'> <span class="n">pthread_kill</span><span class="p">(</span> <span class="n">th2</span><span class="p">,</span> <span class="n">SIGALRM</span> <span class="p">);</span>
 </span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">join2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 </span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
@@ -242,77 +318,31 @@
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
 </pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/thread$ gcc -o ./test ./test.c -lpthread
-</span><span class='line'>bramante@matrix:~/thread$ gdb ./test
-</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
-</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
-</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
-</span><span class='line'>This is free software: you are free to change and redistribute it.
-</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-</span><span class='line'>and "show warranty" for details.
-</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
-</span><span class='line'>For bug reporting instructions, please see:
-</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
-</span><span class='line'>Reading symbols from /home/bramante/thread/test...(no debugging symbols found)...done.
-</span><span class='line'>(gdb) run
-</span><span class='line'>Starting program: /home/bramante/thread/test
-</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
-</span><span class='line'>[Thread debugging using libthread_db enabled]
-</span><span class='line'>Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+</span><span class='line'>bramante@matrix:~/thread$ ./test
 </span><span class='line'>
-</span><span class='line'>main(): 140737354028800
-</span><span class='line'>[New Thread 0x7ffff77fe700 (LWP 3052)]
+</span><span class='line'>main(): 140158652921600
 </span><span class='line'>
-</span><span class='line'>threadFunction1(): 140737345742592
-</span><span class='line'>[New Thread 0x7ffff6ffd700 (LWP 3053)]
+</span><span class='line'>threadFunction2(): 140158636234496
 </span><span class='line'>
-</span><span class='line'>threadFunction2(): 140737337349888
-</span><span class='line'>^C
-</span><span class='line'>Program received signal SIGINT, Interrupt.
-</span><span class='line'>0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>(gdb) thread apply all bt
+</span><span class='line'>threadFunction2
+</span><span class='line'>2
+</span><span class='line'>threadFunction1(): 140158644627200
 </span><span class='line'>
-</span><span class='line'>Thread 3 (Thread 0x7ffff6ffd700 (LWP 3053)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x00000000004006da in threadFunction2 ()
-</span><span class='line'>#2  0x00007ffff7bc4e9a in start_thread () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#3  0x00007ffff78f238d in clone () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>#4  0x0000000000000000 in ?? ()
+</span><span class='line'>threadFunction1
+</span><span class='line'>121212121211212122121121221121221121221121221122121121221122112211221122112212112122112212112122112122112211221122112122112212112211221122112211221122112211221122112211221122112211212
+</span><span class='line'>signalHandler
 </span><span class='line'>
-</span><span class='line'>Thread 2 (Thread 0x7ffff77fe700 (LWP 3052)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x000000000040068e in threadFunction1 ()
-</span><span class='line'>#2  0x00007ffff7bc4e9a in start_thread () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#3  0x00007ffff78f238d in clone () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>#4  0x0000000000000000 in ?? ()
+</span><span class='line'>signalHandler(): 140158644627200
 </span><span class='line'>
-</span><span class='line'>Thread 1 (Thread 0x7ffff7fe5700 (LWP 3049)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x0000000000400754 in main ()
-</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>join1
+</span><span class='line'>2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222
+</span><span class='line'>signalHandler
+</span><span class='line'>
+</span><span class='line'>signalHandler(): 140158636234496
+</span><span class='line'>
+</span><span class='line'>join2
+</span><span class='line'>bramante@matrix:~/thread$</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>
@@ -346,7 +376,7 @@
   
 
 
-<time datetime="2015-08-04T23:57:27+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-07T00:39:25+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -354,7 +384,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/07/send-signal-to-thread/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/07/send-signal-to-thread/" >Tweet</a>
   
   
   
@@ -362,10 +392,8 @@
 
     
     
-      <a class="pull-left" href="/blog/2015/07/31/kill-process-by-name/" title="Previous Post: Kill Process by Name">&laquo; Kill Process by Name</a>
+      <a class="pull-left" href="/blog/2015/08/06/nanosleep/" title="Previous Post: nanosleep">&laquo; nanosleep</a>
     
-    
-      <a class="pull-right" href="/blog/2015/08/06/nanosleep/" title="Next Post: nanosleep">nanosleep &raquo;</a>
     
   </footer>
 
@@ -463,8 +491,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F04%2Fgetting-the-backtrace-for-all-the-threads-in-gdb%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F04%2Fgetting-the-backtrace-for-all-the-threads-in-gdb%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F07%2Fsend-signal-to-thread%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F07%2Fsend-signal-to-thread%2F';
         var disqus_script = 'embed.js';
       
     (function () {

@@ -1,0 +1,273 @@
+---
+layout: post
+title: "Dump PCR"
+date: 2015-08-09 16:00:11 +0800
+comments: true
+categories: 
+---
+
+利用FFmpeg可以dump出TS file裡的PCR,
+parse出PCR value的function是用FFmpeg裡的code修改而來,
+以下是範例程式:
+
+``` c pcr.c
+	#include <libavcodec/avcodec.h>
+	#include <libavformat/avformat.h>
+	#include <stdio.h>
+	
+	#define CLEARBITS(a,b)	((a) &= ~(b))
+	#define SETBITS(a,b)		((a) |= (b))
+	#define ISSET(a,b)		(((a) & (b))!=0)
+	#define ISCLEARED(a,b)	(((a) & (b))==0)
+	
+	#ifndef MAX
+	#define MAX(a,b)  (((a) > (b)) ? (a) : (b))
+	#endif			   /* max */
+	
+	#ifndef MIN
+	#define MIN(a,b)  (((a) < (b)) ? (a) : (b))
+	#endif			   /* min */
+	
+	#define MY_90K_COUNTS_OF_1_SECOND  90000
+	
+	#define MY_SEARCH_PCR_SIZE  ((200 * 1024 / 188) * 188)
+	
+	#define MY_RB16(x)  ((((const unsigned char*)(x))[0] << 8) | ((const unsigned char*)(x))[1])
+	
+	#define MY_RB32(x)  ((((const unsigned char*)(x))[0] << 24) | \
+	                     (((const unsigned char*)(x))[1] << 16) | \
+	                     (((const unsigned char*)(x))[2] <<  8) | \
+	                      ((const unsigned char*)(x))[3])
+	
+	static int MY_ParsePcr( long long *ppcrHigh, int *ppcrLow, const unsigned char *packet )
+	{
+	 int afc, len, flags ;
+	 const unsigned char *p ;
+	 unsigned int v ;
+	
+	 afc = (packet[3] >> 4) & 3;
+	 if(afc <= 1)
+	   {
+	    return -1;
+	   }
+	 p = packet + 4;
+	 len = p[0];
+	 p++;
+	 if(len == 0)
+	   {
+	    return -1;
+	   }
+	 flags = *p++;
+	 len--;
+	 if(!(flags & 0x10))
+	   {
+	    return -1;
+	   }
+	 if(len < 6)
+	   {
+	    return -1;
+	   }
+	 v = MY_RB32(p);
+	 *ppcrHigh = ((long long)v << 1) | (p[4] >> 7);
+	 *ppcrLow = ((p[4] & 1) << 8) | p[5];
+	 return 0;
+	}
+	
+	static long long MY_GetPcr( int pcrPid, unsigned char* address, int length, int direction )
+	{
+	 int pos ;
+	 unsigned char* buf ;
+	 long long timestamp ;
+	 int pcrL ;
+	
+	 if( direction == 0 )
+	   {
+	    pos = 0 ;
+	    for(;;)
+	       {
+	        if( pos >= length )
+	          {
+	           return AV_NOPTS_VALUE ;
+	          }
+	        buf = address + pos ;
+	        if((pcrPid < 0 || (MY_RB16(buf + 1) & 0x1FFF) == pcrPid) &&  MY_ParsePcr(&timestamp, &pcrL, buf) == 0)
+	          {
+	           break;
+	          }
+	        pos += 188 ;
+	       }
+	    return timestamp ;
+	   }
+	  else
+	   {
+	    pos = ((length/188)*188) - 188 ;
+	    for(;;)
+	       {
+	        if( pos < 0 )
+	          {
+	           return AV_NOPTS_VALUE ;
+	          }
+	        buf = address + pos ;
+	        if((pcrPid < 0 || (MY_RB16(buf + 1) & 0x1FFF) == pcrPid) &&  MY_ParsePcr(&timestamp, &pcrL, buf) == 0)
+	          {
+	           break;
+	          }
+	        pos -= 188 ;
+	       }
+	    return timestamp ;
+	   }
+	}
+	
+	int main(int argc, char *argv[])
+	{
+	 AVFormatContext *pFormatCtx ;
+	 int             i ;
+	 int             videoStream ;
+	 AVPacket        packet ;
+	 AVCodecContext  *pCodecCtx;
+	 AVCodec         *pCodec;
+	 AVFrame         *pFrame;
+	 AVFrame         *pFrameRGB;
+	 int             numBytes;
+	 unsigned char   *buffer;
+	
+	 if(argc < 2)
+	   {
+	    printf("Please provide a movie file\n");
+	    return -1;
+	   }
+	
+	 // Register all formats and codecs
+	 av_register_all();
+	
+	 // Open video file
+	 if(av_open_input_file(&pFormatCtx, argv[1], NULL, 0, NULL)!=0)
+	   {
+	    return -1; // Couldn't open file
+	   }
+	
+	 //printf("pFormatCtx->nb_streams:%d\n",pFormatCtx->nb_streams);
+	
+	 // Retrieve stream information
+	 if(av_find_stream_info(pFormatCtx)<0)
+	   {
+	    return -1; // Couldn't find stream information
+	   }
+	
+	 // Dump information about file onto standard error
+	 dump_format(pFormatCtx, 0, argv[1], 0);
+	
+	 //printf("pFormatCtx->nb_streams:%d\n",pFormatCtx->nb_streams);
+	
+	 // Find the first video stream
+	 videoStream = -1 ;
+	 for( i = 0 ; i < pFormatCtx->nb_streams ; i ++ )
+	    {
+	     if(pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
+	       {
+	        videoStream=i;
+	        break;
+	       }
+	    }
+	
+	 if( videoStream == -1 )
+	   {
+	    printf("Didn't find a video stream.\n");
+	    return -1; // Didn't find a video stream
+	   }
+	
+	 // Get a pointer to the codec context for the video stream
+	 pCodecCtx=pFormatCtx->streams[videoStream]->codec;
+	
+	 // Find the decoder for the video stream
+	 pCodec=avcodec_find_decoder(pCodecCtx->codec_id);
+	 if(pCodec==NULL) {
+	   printf("Unsupported codec!\n");
+	   return -1; // Codec not found
+	 }
+	 // Open codec
+	 if(avcodec_open(pCodecCtx, pCodec)<0)
+	   return -1; // Could not open codec
+	
+	 // Allocate video frame
+	 pFrame=avcodec_alloc_frame();
+	
+	 // Allocate an AVFrame structure
+	 pFrameRGB=avcodec_alloc_frame();
+	 if(pFrameRGB==NULL)
+	   return -1;
+	
+	 // Determine required buffer size and allocate buffer
+	 numBytes=avpicture_get_size(PIX_FMT_RGB24, pCodecCtx->width,
+	           pCodecCtx->height);
+	 buffer=(unsigned char *)av_malloc(numBytes*sizeof(unsigned char ));
+	
+	 // Assign appropriate parts of buffer to image planes in pFrameRGB
+	 // Note that pFrameRGB is an AVFrame, but AVFrame is a superset
+	 // of AVPicture
+	 avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24,
+	     pCodecCtx->width, pCodecCtx->height);
+	
+	 url_fseek( pFormatCtx->pb, 0, SEEK_SET);
+	 unsigned char pktBuf[188] ;
+	 long long pcr ;
+	 while( get_buffer( pFormatCtx->pb, pktBuf, 188) > 0 )
+	      {
+	       pcr = MY_GetPcr( pFormatCtx->streams[videoStream]->id, pktBuf, 188, 0 );
+	       if( pcr != AV_NOPTS_VALUE )
+	         {
+	          printf("pcr: %lld\n",pcr);
+	         } 
+	      } 
+	
+	 // Free the RGB image
+	 av_free(buffer);
+	 av_free(pFrameRGB);
+	
+	 // Free the YUV frame
+	 av_free(pFrame);
+	
+	 // Close the codec
+	 avcodec_close(pCodecCtx);
+	
+	 // Close the video file
+	 av_close_input_file(pFormatCtx);
+	
+	 return 0;
+	}
+```
+
+實際dump PCR的狀況如下:
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~/pcr$ ll
+	total 195588
+	drwxrwxr-x 2 bramante bramante      4096 Aug  9 16:06 ./
+	drwxr-xr-x 4 bramante bramante      4096 Aug  7 21:00 ../
+	-rwxrw-rw- 1 bramante bramante 200259292 Feb 24  2004 demo.ts*
+	-rwxrw-rw- 1 bramante bramante      5204 Aug  9 15:59 pcr.c*
+	bramante@matrix:~/pcr$ gcc -o pcr pcr.c -lavformat
+	bramante@matrix:~/pcr$ ./pcr demo.ts
+	Input #0, mpegts, from 'demo.ts':
+	  Duration: 27:01:37.48, start: 49894.317511, bitrate: 16 kb/s
+	  Program 1
+	    Stream #0.3[0x11]: Video: mpeg2video (Main), yuv420p, 1920x1080 [PAR 1:1 DAR 16:9], 15000 kb/s, 31.35 fps, 29.97 tbr, 90k tbn, 59.94 tbc
+	    Stream #0.2[0x14](eng): Audio: ac3, 48000 Hz, stereo, s16, 384 kb/s
+	  Program 2
+	    Stream #0.0[0x21]: Video: mpeg2video (Main), yuv420p, 704x480 [PAR 10:11 DAR 4:3], 3370 kb/s, 35.46 fps, 29.97 tbr, 90k tbn, 59.94 tbc
+	    Stream #0.1[0x24](eng): Audio: ac3, 48000 Hz, stereo, s16, 384 kb/s
+	pcr: 4490480379
+	pcr: 4490485796
+	pcr: 4490491142
+	pcr: 4490496559
+	....
+	pcr: 4497772096
+	pcr: 4497777513
+	pcr: 4497782915
+	pcr: 4497788276
+	pcr: 4497793748
+	bramante@matrix:~/pcr$
+
+```
+</font>

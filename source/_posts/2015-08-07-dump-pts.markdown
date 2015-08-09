@@ -100,7 +100,7 @@ categories:
 	 avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24,
 	     pCodecCtx->width, pCodecCtx->height);
 	
-	 // Read frames and save first five frames to disk
+	 // Read frames
 	 i = 0 ;
 	 while(av_read_packet(pFormatCtx, &packet)==0)
 	      {

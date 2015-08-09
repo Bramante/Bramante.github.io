@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Dump PTS - Bramante&#x27;s Blog</title>
+  <title>Dump PCR - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,8 +13,9 @@
   
     
   
-  <meta name="description" content="利用FFmpeg可以dump出TS file裡的PTS,
-以下是範例程式: pts.c1
+  <meta name="description" content="利用FFmpeg可以dump出TS file裡的PCR,
+parse出PCR value的function是用FFmpeg裡的code修改而來,
+以下是範例程式: pcr.c1
 2
 3
 4
@@ -36,22 +37,7 @@
 20
 21
 22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-37
-38 &hellip;">
+23 &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -59,16 +45,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/07/dump-pts/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/09/dump-pcr/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="Dump PTS" />
-  <meta name="og:description" content="利用FFmpeg可以dump出TS file裡的PTS,
-以下是範例程式: pts.c1
+  <meta name="og:title" content="Dump PCR" />
+  <meta name="og:description" content="利用FFmpeg可以dump出TS file裡的PCR,
+parse出PCR value的function是用FFmpeg裡的code修改而來,
+以下是範例程式: pcr.c1
 2
 3
 4
@@ -90,24 +77,9 @@
 20
 21
 22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-37
-38 &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/07/dump-pts/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/08/07/dump-pts/">
+23 &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/09/dump-pcr/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/08/09/dump-pcr/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -154,7 +126,7 @@
   <header>
     
       
-        <h1 class="entry-title">Dump PTS</h1>
+        <h1 class="entry-title">Dump PCR</h1>
       
     
     
@@ -180,7 +152,7 @@
   
 
 
-<time datetime="2015-08-07T20:47:15+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-09T16:00:11+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -192,10 +164,11 @@
   </header>
 
 
-  <div class="entry-content"><p>利用FFmpeg可以dump出TS file裡的PTS,
+  <div class="entry-content"><p>利用FFmpeg可以dump出TS file裡的PCR,
+parse出PCR value的function是用FFmpeg裡的code修改而來,
 以下是範例程式:</p>
 
-<figure class='code'><figcaption><span>pts.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>pcr.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -317,9 +290,214 @@
 <span class='line-number'>120</span>
 <span class='line-number'>121</span>
 <span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+<span class='line-number'>145</span>
+<span class='line-number'>146</span>
+<span class='line-number'>147</span>
+<span class='line-number'>148</span>
+<span class='line-number'>149</span>
+<span class='line-number'>150</span>
+<span class='line-number'>151</span>
+<span class='line-number'>152</span>
+<span class='line-number'>153</span>
+<span class='line-number'>154</span>
+<span class='line-number'>155</span>
+<span class='line-number'>156</span>
+<span class='line-number'>157</span>
+<span class='line-number'>158</span>
+<span class='line-number'>159</span>
+<span class='line-number'>160</span>
+<span class='line-number'>161</span>
+<span class='line-number'>162</span>
+<span class='line-number'>163</span>
+<span class='line-number'>164</span>
+<span class='line-number'>165</span>
+<span class='line-number'>166</span>
+<span class='line-number'>167</span>
+<span class='line-number'>168</span>
+<span class='line-number'>169</span>
+<span class='line-number'>170</span>
+<span class='line-number'>171</span>
+<span class='line-number'>172</span>
+<span class='line-number'>173</span>
+<span class='line-number'>174</span>
+<span class='line-number'>175</span>
+<span class='line-number'>176</span>
+<span class='line-number'>177</span>
+<span class='line-number'>178</span>
+<span class='line-number'>179</span>
+<span class='line-number'>180</span>
+<span class='line-number'>181</span>
+<span class='line-number'>182</span>
+<span class='line-number'>183</span>
+<span class='line-number'>184</span>
+<span class='line-number'>185</span>
+<span class='line-number'>186</span>
+<span class='line-number'>187</span>
+<span class='line-number'>188</span>
+<span class='line-number'>189</span>
+<span class='line-number'>190</span>
+<span class='line-number'>191</span>
+<span class='line-number'>192</span>
+<span class='line-number'>193</span>
+<span class='line-number'>194</span>
+<span class='line-number'>195</span>
+<span class='line-number'>196</span>
+<span class='line-number'>197</span>
+<span class='line-number'>198</span>
+<span class='line-number'>199</span>
+<span class='line-number'>200</span>
+<span class='line-number'>201</span>
+<span class='line-number'>202</span>
+<span class='line-number'>203</span>
+<span class='line-number'>204</span>
+<span class='line-number'>205</span>
+<span class='line-number'>206</span>
+<span class='line-number'>207</span>
+<span class='line-number'>208</span>
+<span class='line-number'>209</span>
+<span class='line-number'>210</span>
+<span class='line-number'>211</span>
+<span class='line-number'>212</span>
+<span class='line-number'>213</span>
+<span class='line-number'>214</span>
+<span class='line-number'>215</span>
+<span class='line-number'>216</span>
+<span class='line-number'>217</span>
+<span class='line-number'>218</span>
+<span class='line-number'>219</span>
+<span class='line-number'>220</span>
+<span class='line-number'>221</span>
+<span class='line-number'>222</span>
+<span class='line-number'>223</span>
+<span class='line-number'>224</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;libavcodec/avcodec.h&gt;</span>
 </span><span class='line'><span class="cp">#include &lt;libavformat/avformat.h&gt;</span>
 </span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define CLEARBITS(a,b)   ((a) &amp;= ~(b))</span>
+</span><span class='line'><span class="cp">#define SETBITS(a,b)     ((a) |= (b))</span>
+</span><span class='line'><span class="cp">#define ISSET(a,b)       (((a) &amp; (b))!=0)</span>
+</span><span class='line'><span class="cp">#define ISCLEARED(a,b)   (((a) &amp; (b))==0)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifndef MAX</span>
+</span><span class='line'><span class="cp">#define MAX(a,b)  (((a) &gt; (b)) ? (a) : (b))</span>
+</span><span class='line'><span class="cp">#endif              </span><span class="cm">/* max */</span><span class="cp"></span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#ifndef MIN</span>
+</span><span class='line'><span class="cp">#define MIN(a,b)  (((a) &lt; (b)) ? (a) : (b))</span>
+</span><span class='line'><span class="cp">#endif              </span><span class="cm">/* min */</span><span class="cp"></span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define MY_90K_COUNTS_OF_1_SECOND  90000</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define MY_SEARCH_PCR_SIZE  ((200 * 1024 / 188) * 188)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define MY_RB16(x)  ((((const unsigned char*)(x))[0] &lt;&lt; 8) | ((const unsigned char*)(x))[1])</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define MY_RB32(x)  ((((const unsigned char*)(x))[0] &lt;&lt; 24) | \</span>
+</span><span class='line'><span class="cp">                     (((const unsigned char*)(x))[1] &lt;&lt; 16) | \</span>
+</span><span class='line'><span class="cp">                     (((const unsigned char*)(x))[2] &lt;&lt;  8) | \</span>
+</span><span class='line'><span class="cp">                      ((const unsigned char*)(x))[3])</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">MY_ParsePcr</span><span class="p">(</span> <span class="kt">long</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ppcrHigh</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">ppcrLow</span><span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">packet</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">afc</span><span class="p">,</span> <span class="n">len</span><span class="p">,</span> <span class="n">flags</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">v</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'> <span class="n">afc</span> <span class="o">=</span> <span class="p">(</span><span class="n">packet</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">afc</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="n">p</span> <span class="o">=</span> <span class="n">packet</span> <span class="o">+</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class='line'> <span class="n">len</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'> <span class="n">p</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">len</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="n">flags</span> <span class="o">=</span> <span class="o">*</span><span class="n">p</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'> <span class="n">len</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="mh">0x10</span><span class="p">))</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">len</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="n">v</span> <span class="o">=</span> <span class="n">MY_RB32</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+</span><span class='line'> <span class="o">*</span><span class="n">ppcrHigh</span> <span class="o">=</span> <span class="p">((</span><span class="kt">long</span> <span class="kt">long</span><span class="p">)</span><span class="n">v</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">7</span><span class="p">);</span>
+</span><span class='line'> <span class="o">*</span><span class="n">ppcrLow</span> <span class="o">=</span> <span class="p">((</span><span class="n">p</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">p</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">long</span> <span class="kt">long</span> <span class="nf">MY_GetPcr</span><span class="p">(</span> <span class="kt">int</span> <span class="n">pcrPid</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span> <span class="n">address</span><span class="p">,</span> <span class="kt">int</span> <span class="n">length</span><span class="p">,</span> <span class="kt">int</span> <span class="n">direction</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">pos</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span> <span class="n">buf</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">long</span> <span class="kt">long</span> <span class="n">timestamp</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">pcrL</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span> <span class="n">direction</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(;;)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="n">length</span> <span class="p">)</span>
+</span><span class='line'>          <span class="p">{</span>
+</span><span class='line'>           <span class="k">return</span> <span class="n">AV_NOPTS_VALUE</span> <span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="n">buf</span> <span class="o">=</span> <span class="n">address</span> <span class="o">+</span> <span class="n">pos</span> <span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">((</span><span class="n">pcrPid</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="n">MY_RB16</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x1FFF</span><span class="p">)</span> <span class="o">==</span> <span class="n">pcrPid</span><span class="p">)</span> <span class="o">&amp;&amp;</span>  <span class="n">MY_ParsePcr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">timestamp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pcrL</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">{</span>
+</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="n">pos</span> <span class="o">+=</span> <span class="mi">188</span> <span class="p">;</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">timestamp</span> <span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">pos</span> <span class="o">=</span> <span class="p">((</span><span class="n">length</span><span class="o">/</span><span class="mi">188</span><span class="p">)</span><span class="o">*</span><span class="mi">188</span><span class="p">)</span> <span class="o">-</span> <span class="mi">188</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(;;)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>          <span class="p">{</span>
+</span><span class='line'>           <span class="k">return</span> <span class="n">AV_NOPTS_VALUE</span> <span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="n">buf</span> <span class="o">=</span> <span class="n">address</span> <span class="o">+</span> <span class="n">pos</span> <span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">((</span><span class="n">pcrPid</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="n">MY_RB16</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x1FFF</span><span class="p">)</span> <span class="o">==</span> <span class="n">pcrPid</span><span class="p">)</span> <span class="o">&amp;&amp;</span>  <span class="n">MY_ParsePcr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">timestamp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pcrL</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">{</span>
+</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="n">pos</span> <span class="o">-=</span> <span class="mi">188</span> <span class="p">;</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">timestamp</span> <span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
 </span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
 </span><span class='line'><span class="p">{</span>
@@ -332,7 +510,7 @@
 </span><span class='line'> <span class="n">AVFrame</span>         <span class="o">*</span><span class="n">pFrame</span><span class="p">;</span>
 </span><span class='line'> <span class="n">AVFrame</span>         <span class="o">*</span><span class="n">pFrameRGB</span><span class="p">;</span>
 </span><span class='line'> <span class="kt">int</span>             <span class="n">numBytes</span><span class="p">;</span>
-</span><span class='line'> <span class="kt">uint8_t</span>         <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span>   <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
 </span><span class='line'>
 </span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>
 </span><span class='line'>   <span class="p">{</span>
@@ -349,6 +527,8 @@
 </span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Couldn&#39;t open file</span>
 </span><span class='line'>   <span class="p">}</span>
 </span><span class='line'>
+</span><span class='line'> <span class="c1">//printf(&quot;pFormatCtx-&gt;nb_streams:%d\n&quot;,pFormatCtx-&gt;nb_streams);</span>
+</span><span class='line'>
 </span><span class='line'> <span class="c1">// Retrieve stream information</span>
 </span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">av_find_stream_info</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span>
 </span><span class='line'>   <span class="p">{</span>
@@ -357,6 +537,8 @@
 </span><span class='line'>
 </span><span class='line'> <span class="c1">// Dump information about file onto standard error</span>
 </span><span class='line'> <span class="n">dump_format</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'> <span class="c1">//printf(&quot;pFormatCtx-&gt;nb_streams:%d\n&quot;,pFormatCtx-&gt;nb_streams);</span>
 </span><span class='line'>
 </span><span class='line'> <span class="c1">// Find the first video stream</span>
 </span><span class='line'> <span class="n">videoStream</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="p">;</span>
@@ -399,7 +581,7 @@
 </span><span class='line'> <span class="c1">// Determine required buffer size and allocate buffer</span>
 </span><span class='line'> <span class="n">numBytes</span><span class="o">=</span><span class="n">avpicture_get_size</span><span class="p">(</span><span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span>
 </span><span class='line'>           <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
-</span><span class='line'> <span class="n">buffer</span><span class="o">=</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">numBytes</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">));</span>
+</span><span class='line'> <span class="n">buffer</span><span class="o">=</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">numBytes</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="p">));</span>
 </span><span class='line'>
 </span><span class='line'> <span class="c1">// Assign appropriate parts of buffer to image planes in pFrameRGB</span>
 </span><span class='line'> <span class="c1">// Note that pFrameRGB is an AVFrame, but AVFrame is a superset</span>
@@ -407,21 +589,16 @@
 </span><span class='line'> <span class="n">avpicture_fill</span><span class="p">((</span><span class="n">AVPicture</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span>
 </span><span class='line'>     <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'> <span class="c1">// Read frames</span>
-</span><span class='line'> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="n">av_read_packet</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'> <span class="n">url_fseek</span><span class="p">(</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">SEEK_SET</span><span class="p">);</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">pktBuf</span><span class="p">[</span><span class="mi">188</span><span class="p">]</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">long</span> <span class="kt">long</span> <span class="n">pcr</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">while</span><span class="p">(</span> <span class="n">get_buffer</span><span class="p">(</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="n">pktBuf</span><span class="p">,</span> <span class="mi">188</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">)</span>
 </span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="c1">// Is this a packet from the video stream?</span>
-</span><span class='line'>       <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span><span class="o">==</span><span class="n">videoStream</span><span class="p">)</span>
-</span><span class='line'>         <span class="p">{</span>             
-</span><span class='line'>          <span class="k">if</span><span class="p">(</span> <span class="n">packet</span><span class="p">.</span><span class="n">pts</span> <span class="o">!=</span> <span class="n">AV_NOPTS_VALUE</span> <span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>             <span class="n">printf</span><span class="p">(</span><span class="s">&quot;video pts: %lld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">packet</span><span class="p">.</span><span class="n">pts</span><span class="p">);</span>
-</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>       <span class="n">pcr</span> <span class="o">=</span> <span class="n">MY_GetPcr</span><span class="p">(</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="n">pktBuf</span><span class="p">,</span> <span class="mi">188</span><span class="p">,</span> <span class="mi">0</span> <span class="p">);</span>
+</span><span class='line'>       <span class="k">if</span><span class="p">(</span> <span class="n">pcr</span> <span class="o">!=</span> <span class="n">AV_NOPTS_VALUE</span> <span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">printf</span><span class="p">(</span><span class="s">&quot;pcr: %lld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">pcr</span><span class="p">);</span>
 </span><span class='line'>         <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>       <span class="c1">// Free the packet that was allocated by av_read_frame</span>
-</span><span class='line'>       <span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
 </span><span class='line'>      <span class="p">}</span>
 </span><span class='line'>
 </span><span class='line'> <span class="c1">// Free the RGB image</span>
@@ -442,7 +619,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>實際dump PTS的狀況如下:</p>
+<p>實際dump PCR的狀況如下:</p>
 
 <p><font face="sans"></p>
 
@@ -473,51 +650,34 @@
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/pts$ ll
-</span><span class='line'>total 3556
-</span><span class='line'>drwxrwxr-x 2 bramante bramante    4096 Aug  7 20:51 ./
-</span><span class='line'>drwxr-xr-x 5 bramante bramante    4096 Aug  7 20:32 ../
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante 3625204 Jul 21 20:04 demo.ts*
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante    2975 Aug  7 20:47 pts.c*
-</span><span class='line'>bramante@matrix:~/pts$ gcc -o pts pts.c -lavformat
-</span><span class='line'>bramante@matrix:~/pts$ ./pts demo.ts
-</span><span class='line'>[mpegts @ 0x1815040] max_analyze_duration reached
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/pcr$ ll
+</span><span class='line'>total 195588
+</span><span class='line'>drwxrwxr-x 2 bramante bramante      4096 Aug  9 16:06 ./
+</span><span class='line'>drwxr-xr-x 4 bramante bramante      4096 Aug  7 21:00 ../
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 200259292 Feb 24  2004 demo.ts*
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante      5204 Aug  9 15:59 pcr.c*
+</span><span class='line'>bramante@matrix:~/pcr$ gcc -o pcr pcr.c -lavformat
+</span><span class='line'>bramante@matrix:~/pcr$ ./pcr demo.ts
 </span><span class='line'>Input #0, mpegts, from 'demo.ts':
-</span><span class='line'>  Duration: 00:04:15.18, start: 1.400000, bitrate: 113 kb/s
+</span><span class='line'>  Duration: 27:01:37.48, start: 49894.317511, bitrate: 16 kb/s
 </span><span class='line'>  Program 1
-</span><span class='line'>    Metadata:
-</span><span class='line'>      service_name    : Service01
-</span><span class='line'>      service_provider: Libav
-</span><span class='line'>    Stream #0.0[0x100]: Video: mpeg4 (Simple Profile), yuv420p, 640x480 [PAR 1:1 DAR 4:3], 1 fps, 1 tbr, 90k tbn, 1 tbc
-</span><span class='line'>    Stream #0.1[0x101]: Audio: aac, 44100 Hz, stereo, s16, 61 kb/s
-</span><span class='line'>video pts: 126000
-</span><span class='line'>video pts: 216000
-</span><span class='line'>video pts: 306000
-</span><span class='line'>video pts: 396000
-</span><span class='line'>video pts: 486000
-</span><span class='line'>video pts: 576000
-</span><span class='line'>video pts: 666000
-</span><span class='line'>video pts: 756000
-</span><span class='line'>video pts: 846000
-</span><span class='line'>video pts: 936000
-</span><span class='line'>video pts: 1026000
-</span><span class='line'>video pts: 1116000
-</span><span class='line'>video pts: 1206000
+</span><span class='line'>    Stream #0.3[0x11]: Video: mpeg2video (Main), yuv420p, 1920x1080 [PAR 1:1 DAR 16:9], 15000 kb/s, 31.35 fps, 29.97 tbr, 90k tbn, 59.94 tbc
+</span><span class='line'>    Stream #0.2[0x14](eng): Audio: ac3, 48000 Hz, stereo, s16, 384 kb/s
+</span><span class='line'>  Program 2
+</span><span class='line'>    Stream #0.0[0x21]: Video: mpeg2video (Main), yuv420p, 704x480 [PAR 10:11 DAR 4:3], 3370 kb/s, 35.46 fps, 29.97 tbr, 90k tbn, 59.94 tbc
+</span><span class='line'>    Stream #0.1[0x24](eng): Audio: ac3, 48000 Hz, stereo, s16, 384 kb/s
+</span><span class='line'>pcr: 4490480379
+</span><span class='line'>pcr: 4490485796
+</span><span class='line'>pcr: 4490491142
+</span><span class='line'>pcr: 4490496559
 </span><span class='line'>....
-</span><span class='line'>video pts: 22806000
-</span><span class='line'>video pts: 22896000
-</span><span class='line'>video pts: 22986000
-</span><span class='line'>video pts: 23076000
-</span><span class='line'>bramante@matrix:~/pts$</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>pcr: 4497772096
+</span><span class='line'>pcr: 4497777513
+</span><span class='line'>pcr: 4497782915
+</span><span class='line'>pcr: 4497788276
+</span><span class='line'>pcr: 4497793748
+</span><span class='line'>bramante@matrix:~/pcr$
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>
@@ -551,7 +711,7 @@
   
 
 
-<time datetime="2015-08-07T20:47:15+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-09T16:00:11+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -559,7 +719,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/07/dump-pts/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/07/dump-pts/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/09/dump-pcr/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/09/dump-pcr/" >Tweet</a>
   
   
   
@@ -567,10 +727,8 @@
 
     
     
-      <a class="pull-left" href="/blog/2015/08/07/send-signal-to-thread/" title="Previous Post: Send signal to thread">&laquo; Send signal to thread</a>
+      <a class="pull-left" href="/blog/2015/08/07/dump-pts/" title="Previous Post: Dump PTS">&laquo; Dump PTS</a>
     
-    
-      <a class="pull-right" href="/blog/2015/08/09/dump-pcr/" title="Next Post: Dump PCR">Dump PCR &raquo;</a>
     
   </footer>
 
@@ -668,8 +826,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F07%2Fdump-pts%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F07%2Fdump-pts%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F09%2Fdump-pcr%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F09%2Fdump-pcr%2F';
         var disqus_script = 'embed.js';
       
     (function () {

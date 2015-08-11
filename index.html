@@ -126,6 +126,487 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/08/11/gdb-debugging-skills-2/">GDB Debugging Skills (2)</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-11T23:56:31+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/08/11/gdb-debugging-skills-2/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>假設有一支客戶寫的程式,
+執行檔有debug symbol,
+在客戶不給source code的狀況下,
+該如何知道某個API被call的情形?</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">test</span><span class="p">(</span><span class="kt">int</span> <span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;@test(arg:%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">arg</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ ./test 5
+</span><span class='line'>@test(arg:0)
+</span><span class='line'>@test(arg:1)
+</span><span class='line'>@test(arg:2)
+</span><span class='line'>@test(arg:3)
+</span><span class='line'>@test(arg:4)
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>先在有source code的狀況下, 讓gdb自動印出API被call時的參數:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gdb ./test
+</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
+</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
+</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+</span><span class='line'>This is free software: you are free to change and redistribute it.
+</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+</span><span class='line'>and "show warranty" for details.
+</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
+</span><span class='line'>For bug reporting instructions, please see:
+</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
+</span><span class='line'>Reading symbols from /home/bramante/test/test...done.
+</span><span class='line'>(gdb) b test
+</span><span class='line'>Breakpoint 1 at 0x40058f: file ./test.c, line 7.
+</span><span class='line'>(gdb) commands 1
+</span><span class='line'>Type commands for breakpoint(s) 1, one per line.
+</span><span class='line'>End with a line saying just "end".
+</span><span class='line'>&gt;info args
+</span><span class='line'>&gt;continue
+</span><span class='line'>&gt;end
+</span><span class='line'>(gdb) run 5
+</span><span class='line'>Starting program: /home/bramante/test/test 5
+</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=0) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 0
+</span><span class='line'>@test(arg:0)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=1) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 1
+</span><span class='line'>@test(arg:1)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=2) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 2
+</span><span class='line'>@test(arg:2)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=3) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 3
+</span><span class='line'>@test(arg:3)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=4) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 4
+</span><span class='line'>@test(arg:4)
+</span><span class='line'>[Inferior 1 (process 3035) exited normally]
+</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>接下來, 改用gdb的batch mode,
+這樣就可以在target上進行測試後,
+再透過console log來了解API被call的情形:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gdb --batch --command=gdb.cmds --args ./test 5
+</span><span class='line'>Breakpoint 1 at 0x40058f: file ./test.c, line 7.
+</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=0) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 0
+</span><span class='line'>@test(arg:0)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=1) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 1
+</span><span class='line'>@test(arg:1)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=2) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 2
+</span><span class='line'>@test(arg:2)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=3) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 3
+</span><span class='line'>@test(arg:3)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=4) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 4
+</span><span class='line'>@test(arg:4)
+</span><span class='line'>[Inferior 1 (process 3048) exited normally]
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>前面所用到的gdb.cmds的內容如下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>b test
+</span><span class='line'>commands 1
+</span><span class='line'>  info args
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>run</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>回到本文最前面所提到的&#8221;沒有source code&#8221;的狀況,
+我把test.c給砍掉, 看會發生怎樣的狀況:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 28
+</span><span class='line'>drwxrwxr-x 2 bramante bramante  4096 Aug 12 00:10 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante  4096 Aug 11 23:32 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante    50 Aug 11 23:44 gdb.cmds
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante 10084 Aug 11 23:57 test*
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante   316 Aug 11 23:54 test.c
+</span><span class='line'>bramante@matrix:~/test$ rm test.c
+</span><span class='line'>bramante@matrix:~/test$ gdb --batch --command=gdb.cmds --args ./test 5
+</span><span class='line'>Breakpoint 1 at 0x40058f: file ./test.c, line 7.
+</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=0) at ./test.c:7
+</span><span class='line'>7       ./test.c: No such file or directory.
+</span><span class='line'>arg = 0
+</span><span class='line'>@test(arg:0)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=1) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>arg = 1
+</span><span class='line'>@test(arg:1)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=2) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>arg = 2
+</span><span class='line'>@test(arg:2)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=3) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>arg = 3
+</span><span class='line'>@test(arg:3)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=4) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>arg = 4
+</span><span class='line'>@test(arg:4)
+</span><span class='line'>[Inferior 1 (process 3060) exited normally]
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>gdb依然可以印出API的參數.</p>
+
+<p>將gdb.cmds的內容稍做修改:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>b test
+</span><span class='line'>commands 1
+</span><span class='line'>  bt
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>run</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>很不錯, 在修改gdb.cmds後可以印出callstack, 這樣就可以知道API是怎麼被call的:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gdb --batch --command=gdb.cmds --args ./test 2
+</span><span class='line'>Breakpoint 1 at 0x40058f: file ./test.c, line 7.
+</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=0) at ./test.c:7
+</span><span class='line'>7       ./test.c: No such file or directory.
+</span><span class='line'>#0  test (arg=0) at ./test.c:7
+</span><span class='line'>#1  0x00000000004005e6 in main (argc=2, argv=0x7fffffffe5b8) at ./test.c:18
+</span><span class='line'>@test(arg:0)
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=1) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>#0  test (arg=1) at ./test.c:7
+</span><span class='line'>#1  0x00000000004005e6 in main (argc=2, argv=0x7fffffffe5b8) at ./test.c:18
+</span><span class='line'>@test(arg:1)
+</span><span class='line'>[Inferior 1 (process 3091) exited normally]
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>透過gdb的這招, 可以在沒source code的狀況下, 深入了解third-party程式的運作方式.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/08/10/gdb-debugging-skills-1/">GDB Debugging Skills (1)</a></h1>
         
     
@@ -2143,158 +2624,6 @@ adb shell svc wifi disable
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/07/29/builtin-return-address-n/">Builtin Return Address</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-07-29T23:43:20+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/07/29/builtin-return-address-n/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在debug時, 若想知道是哪裡的code來call了某個API,
-可以把__builtin_return_address(0)的value給印出來,
-然後再透過addr2line查出line number.</p>
-
-<p>下面的範例是追查哪裡的code去call了funcA().</p>
-
-<figure class='code'><figcaption><span>ret.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'>     <span class="mi">1</span>  <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
-</span><span class='line'>     <span class="mi">2</span>
-</span><span class='line'>     <span class="mi">3</span>  <span class="kt">void</span> <span class="n">funcA</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'>     <span class="mi">4</span>  <span class="p">{</span>
-</span><span class='line'>     <span class="mi">5</span>   <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ret:0x%08x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
-</span><span class='line'>     <span class="mi">6</span>  <span class="p">}</span>
-</span><span class='line'>     <span class="mi">7</span>
-</span><span class='line'>     <span class="mi">8</span>  <span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'>     <span class="mi">9</span>  <span class="p">{</span>
-</span><span class='line'>    <span class="mi">10</span>   <span class="n">funcA</span><span class="p">();</span>
-</span><span class='line'>    <span class="mi">11</span>   <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'>    <span class="mi">12</span>  <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ret ret.c
-</span><span class='line'>bramante@matrix:~/test$ ./ret
-</span><span class='line'>ret:0x0040051f
-</span><span class='line'>bramante@matrix:~/test$ addr2line -Cfe ./ret 40051f
-</span><span class='line'>main
-</span><span class='line'>/home/bramante/test/ret.c:11
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>addr2line查到的line number是執行完該API後的下一行,
-如果想得到call API的那行的line number,
-可以把address減1之後再查line number.</p>
-
-<p>例如, 0x40051f - 1 = 0x40051e, 然後查0x40051e的line number.</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ addr2line -Cfe ./ret 40051e
-</span><span class='line'>main
-</span><span class='line'>/home/bramante/test/ret.c:10
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>x86對 __builtin_return_address(n)的支援相當完整,
-幾乎可以當成backtrace()來用,
-MIPS和ARM對 __builtin_return_address()的支援則相當有限,
-只支援了 __builtin_return_address(0),
-而且還必需在API內的第一行就取值,
-不然有可能會出錯.</p>
-
-<p>在MIPS或ARM上, __builtin_return_address(0)要放在funcA()開頭的第一行,
-才能確保得到的return address的value是正確的.</p>
-
-<figure class='code'><figcaption><span>funcA()</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">funcA</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span> <span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">;</span><span class="c1">//必須在API開頭的第一行就取值</span>
-</span><span class='line'> <span class="p">....</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ret:0x%08x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">ret</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -2312,6 +2641,10 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/08/11/gdb-debugging-skills-2/">GDB Debugging Skills (2)</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/08/10/gdb-debugging-skills-1/">GDB Debugging Skills (1)</a>
         </li>
       
@@ -2325,10 +2658,6 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
       
         <li>
           <a href="/blog/2015/08/07/send-signal-to-thread/">Send signal to thread</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/06/nanosleep/">nanosleep</a>
         </li>
       
     </ul>

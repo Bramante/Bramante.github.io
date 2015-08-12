@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>ttf2png - Bramante&#x27;s Blog</title>
+  <title>GDB Debugging Skills (3) - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,8 +13,7 @@
   
     
   
-  <meta name="description" content="想要看TTF字型檔裡有哪些字,
-可以利用ttf2png把字型檔的內容dump到png圖檔裡來看. 下載ttf2png的source code: Terminal1
+  <meta name="description" content="在gdb batch mode要怎麼印出每次執行某API的return value, 方法如下. 範例程式: test.c1
 2
 3
 4
@@ -34,7 +33,11 @@
 18
 19
 20
-bramante@matrix &hellip;">
+21
+22
+23
+24
+#include &lt;stdio.h&gt &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -42,16 +45,15 @@ bramante@matrix &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/07/22/ttf2png/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/13/gdb-debugging-skills-3/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="ttf2png" />
-  <meta name="og:description" content="想要看TTF字型檔裡有哪些字,
-可以利用ttf2png把字型檔的內容dump到png圖檔裡來看. 下載ttf2png的source code: Terminal1
+  <meta name="og:title" content="GDB Debugging Skills (3)" />
+  <meta name="og:description" content="在gdb batch mode要怎麼印出每次執行某API的return value, 方法如下. 範例程式: test.c1
 2
 3
 4
@@ -71,9 +73,13 @@ bramante@matrix &hellip;">
 18
 19
 20
-bramante@matrix &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/07/22/ttf2png/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/07/22/ttf2png/">
+21
+22
+23
+24
+#include &lt;stdio.h&gt &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/13/gdb-debugging-skills-3/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/08/13/gdb-debugging-skills-3/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -120,7 +126,7 @@ bramante@matrix &hellip;" />
   <header>
     
       
-        <h1 class="entry-title">Ttf2png</h1>
+        <h1 class="entry-title">GDB Debugging Skills (3)</h1>
       
     
     
@@ -146,7 +152,7 @@ bramante@matrix &hellip;" />
   
 
 
-<time datetime="2015-07-22T00:33:58+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-13T00:47:52+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -158,14 +164,11 @@ bramante@matrix &hellip;" />
   </header>
 
 
-  <div class="entry-content"><p>想要看TTF字型檔裡有哪些字,
-可以利用ttf2png把字型檔的內容dump到png圖檔裡來看.</p>
+  <div class="entry-content"><p>在gdb batch mode要怎麼印出每次執行某API的return value, 方法如下.</p>
 
-<p>下載ttf2png的source code:</p>
+<p>範例程式:</p>
 
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -185,31 +188,38 @@ bramante@matrix &hellip;" />
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ mkdir test_ttf2png
-</span><span class='line'>bramante@matrix:~$ cd test_ttf2png/
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ wget http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
-</span><span class='line'>--2015-07-21 12:40:49--  http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
-</span><span class='line'>Resolving sid.ethz.ch (sid.ethz.ch)... 192.33.97.200
-</span><span class='line'>Connecting to sid.ethz.ch (sid.ethz.ch)|192.33.97.200|:80... connected.
-</span><span class='line'>HTTP request sent, awaiting response... 200 OK
-</span><span class='line'>Length: 11538 (11K) [application/octet-stream]
-</span><span class='line'>Saving to: `ttf2png-0.3.tar.gz'
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
 </span><span class='line'>
-</span><span class='line'>100%[==============================================================================================================================&gt;] 11,538      --.-K/s   in 0.004s
+</span><span class='line'><span class="kt">int</span> <span class="nf">test</span><span class="p">(</span><span class="kt">int</span> <span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;@test(arg:%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">arg</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>2015-07-21 12:40:51 (3.13 MB/s) - `ttf2png-0.3.tar.gz' saved [11538/11538]
-</span><span class='line'>
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
-</span><span class='line'>total 20
-</span><span class='line'>drwxrwxr-x  2 bramante bramante  4096 Jul 21 12:40 ./
-</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
-</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
-</span><span class='line'>bramante@matrix:~/test_ttf2png$</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p></font></p>
-
-<p>Build出ttf2png:</p>
+<p>編譯與執行:</p>
 
 <p><font face="sans"></p>
 
@@ -241,43 +251,47 @@ bramante@matrix &hellip;" />
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
 <span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png$ tar xzf ttf2png-0.3.tar.gz
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
-</span><span class='line'>total 24
-</span><span class='line'>drwxrwxr-x  3 bramante bramante  4096 Jul 21 12:41 ./
-</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
-</span><span class='line'>drwxr-xr-x  2 bramante bramante  4096 Nov  3  2008 ttf2png-0.3/
-</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ cd ttf2png-0.3/
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 52
-</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Nov  3  2008 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ make
-</span><span class='line'>gcc -Wall ttf2png.c -o ttf2png -I/usr/include/freetype2 -L/usr/lib/x86_64-linux-gnu -lfreetype -lz -I/usr/include/libpng12  -lpng12
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 76
-</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Jul 21 12:41 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
-</span><span class='line'>-rwxrwxr-x 1 bramante bramante 22643 Jul 21 12:41 ttf2png*
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ gdb --batch --command=gdb.cmds --args ./test 3
+</span><span class='line'>Breakpoint 1 at 0x40058f: file ./test.c, line 7.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=0) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 0
+</span><span class='line'>@test(arg:0)
+</span><span class='line'>main (argc=2, argv=0x7fffffffe5b8) at ./test.c:20
+</span><span class='line'>20              sleep(1);
+</span><span class='line'>Value returned is $1 = 0
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=1) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 1
+</span><span class='line'>@test(arg:1)
+</span><span class='line'>main (argc=2, argv=0x7fffffffe5b8) at ./test.c:20
+</span><span class='line'>20              sleep(1);
+</span><span class='line'>Value returned is $2 = 1
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=2) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 2
+</span><span class='line'>@test(arg:2)
+</span><span class='line'>main (argc=2, argv=0x7fffffffe5b8) at ./test.c:20
+</span><span class='line'>20              sleep(1);
+</span><span class='line'>Value returned is $3 = 2
+</span><span class='line'>[Inferior 1 (process 2986) exited normally]
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>
 
-<p>把Windows 7裡的times.ttf拿來dump一下:</p>
+<p>可以看到test()被執行了3次, 它的return value都被gdb給印了出來.</p>
+
+<p>前面所用到的gdb.cmds檔案的內容如下:</p>
 
 <p><font face="sans"></p>
 
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -290,46 +304,48 @@ bramante@matrix &hellip;" />
 <span class='line-number'>11</span>
 <span class='line-number'>12</span>
 <span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 892
-</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:46 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
-</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ./ttf2png  -l 11 -s 18 -e -o ./times.png ./times.ttf
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 904
-</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:47 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante  12206 Jul 21 12:47 times.png
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
-</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class=''><span class='line'>b test
+</span><span class='line'>
+</span><span class='line'>define printFuncInfo
+</span><span class='line'>  info args
+</span><span class='line'>  finish
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>commands 1
+</span><span class='line'>  printFuncInfo
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>run</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>
 
-<p>得到的times.png如下, 可以看到times.ttf裡有哪些字:</p>
+<p>要注意, gdb.cmds的內容不能寫成下面這樣, 不然commands在執行到finish後, 在finish後面的command都不會被執行, 需要寫成像前面那樣, 用個user-defined commands把這些command多包一層, 才能避開這個問題.</p>
 
-<p><img class="left" src="/images/2015-07-22-ttf2png/times.png" width="512" height="1024" title="times.png" ></p>
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>錯誤的gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>b test
+</span><span class='line'>
+</span><span class='line'>commands 1
+</span><span class='line'>  info args
+</span><span class='line'>  finish
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>run</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
 </div>
 
 
@@ -360,7 +376,7 @@ bramante@matrix &hellip;" />
   
 
 
-<time datetime="2015-07-22T00:33:58+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-13T00:47:52+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -368,7 +384,7 @@ bramante@matrix &hellip;" />
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/07/22/ttf2png/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/07/22/ttf2png/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/13/gdb-debugging-skills-3/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/13/gdb-debugging-skills-3/" >Tweet</a>
   
   
   
@@ -376,10 +392,8 @@ bramante@matrix &hellip;" />
 
     
     
-      <a class="pull-left" href="/blog/2015/07/21/dump-kernel-callstack/" title="Previous Post: Dump Kernel Callstack">&laquo; Dump Kernel Callstack</a>
+      <a class="pull-left" href="/blog/2015/08/11/gdb-debugging-skills-2/" title="Previous Post: GDB Debugging Skills (2)">&laquo; GDB Debugging Skills (2)</a>
     
-    
-      <a class="pull-right" href="/blog/2015/07/23/how-to-backup-an-old-computer/" title="Next Post: How to backup an old computer">How to backup an old computer &raquo;</a>
     
   </footer>
 
@@ -477,8 +491,8 @@ bramante@matrix &hellip;" />
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F22%2Fttf2png%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F07%2F22%2Fttf2png%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F13%2Fgdb-debugging-skills-3%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F13%2Fgdb-debugging-skills-3%2F';
         var disqus_script = 'embed.js';
       
     (function () {

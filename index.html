@@ -126,6 +126,339 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/08/19/gdb-debugging-skills-6/">GDB Debugging Skills (6)</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-19T00:53:37+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/08/19/gdb-debugging-skills-6/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>假設在下面的程式裡, test()這個API是用來取得遙控器的key值的.
+正常狀況下test()只會送出系統所支援的A廠遙控器的key code (100~103).
+目前拿到一支B廠的遙控器, 它的key code是0~3, 要怎樣在不改code的狀況下,
+利用gdb的batch mode去attach執行中的process,
+讓gdb幫忙做key code的轉換, 好讓系統能支援B廠的遙控器.</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">test</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="o">*</span> <span class="n">getValue</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'> <span class="o">*</span><span class="n">getValue</span> <span class="o">=</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">4</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">return</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">getValue</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="o">&amp;</span><span class="n">getValue</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[*] value: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">getValue</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 16
+</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 19 01:08 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 11 23:32 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  385 Aug 19 00:50 gdb.cmds
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  463 Aug 19 00:21 test.c
+</span><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ ./test 15 &gt; /dev/null &
+</span><span class='line'>[1] 3027
+</span><span class='line'>bramante@matrix:~/test$ sudo gdb --batch --command=gdb.cmds --pid=3027
+</span><span class='line'>
+</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7fff23dfe000
+</span><span class='line'>0x00007f25b2148090 in nanosleep () from /lib/x86_64-linux-gnu/libc.so.6
+</span><span class='line'>Breakpoint 1 at 0x40058c: file ./test.c, line 8.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 103
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 100
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 101
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 102
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>[Inferior 1 (process 3027) exited normally]
+</span><span class='line'>[1]+  Done                    ./test 15 &gt; /dev/null
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>摘要出上面log裡的&#8221;*getValue: 10x&#8221;, 可以知道gdb的確幫忙做了key code的轉換:</p>
+
+<pre><code>*getValue: 103
+*getValue: 100
+*getValue: 101
+*getValue: 102
+</code></pre>
+
+<p>前面所用到的gdb.cmds檔案的內容如下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ cat gdb.cmds
+</span><span class='line'>b test
+</span><span class='line'>
+</span><span class='line'>define printFuncInfo
+</span><span class='line'>  record
+</span><span class='line'>  finish
+</span><span class='line'>  rs
+</span><span class='line'>  rn
+</span><span class='line'>  if *getValue == 0
+</span><span class='line'>    set *getValue=100
+</span><span class='line'>   else
+</span><span class='line'>    if *getValue == 1
+</span><span class='line'>      set *getValue=101
+</span><span class='line'>     else
+</span><span class='line'>      if *getValue == 2
+</span><span class='line'>        set *getValue=102
+</span><span class='line'>       else
+</span><span class='line'>        set *getValue=103
+</span><span class='line'>      end
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>  printf "*getValue: %d\n", *getValue
+</span><span class='line'>  record stop
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>commands 1
+</span><span class='line'>  printFuncInfo
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>continue
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>神奇吧, gdb還能幫忙轉換key code ~</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/08/18/gdb-debugging-skills-5/">GDB Debugging Skills (5)</a></h1>
         
     
@@ -3331,261 +3664,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/">Getting the Backtrace for All the Threads in GDB</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-04T23:57:27+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在嵌入式系統上debug, 有時gdb的運作不是很可靠, 可能會遇到執行幾個指令之後就無法再繼續用的情形, 如果正在處理multi-thread hang住的bug, 那可麻煩了, 可能bt沒幾個thread的callstack, gdb就沒辦法再用了, 這時改用&#8221;thread apply all bt&#8221;是最佳的選擇, 使用一行command就可以把所有thread的callstack都給dump出來.</p>
-
-<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define THREAD_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         nanosleep(&amp;delay,NULL) ;\</span>
-</span><span class='line'><span class="cp">        }</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">pthread_t</span> <span class="n">th1</span> <span class="p">;</span>
-</span><span class='line'><span class="kt">pthread_t</span> <span class="n">th2</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction1(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction2(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">main(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/thread$ gcc -o ./test ./test.c -lpthread
-</span><span class='line'>bramante@matrix:~/thread$ gdb ./test
-</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
-</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
-</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
-</span><span class='line'>This is free software: you are free to change and redistribute it.
-</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-</span><span class='line'>and "show warranty" for details.
-</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
-</span><span class='line'>For bug reporting instructions, please see:
-</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
-</span><span class='line'>Reading symbols from /home/bramante/thread/test...(no debugging symbols found)...done.
-</span><span class='line'>(gdb) run
-</span><span class='line'>Starting program: /home/bramante/thread/test
-</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
-</span><span class='line'>[Thread debugging using libthread_db enabled]
-</span><span class='line'>Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
-</span><span class='line'>
-</span><span class='line'>main(): 140737354028800
-</span><span class='line'>[New Thread 0x7ffff77fe700 (LWP 3052)]
-</span><span class='line'>
-</span><span class='line'>threadFunction1(): 140737345742592
-</span><span class='line'>[New Thread 0x7ffff6ffd700 (LWP 3053)]
-</span><span class='line'>
-</span><span class='line'>threadFunction2(): 140737337349888
-</span><span class='line'>^C
-</span><span class='line'>Program received signal SIGINT, Interrupt.
-</span><span class='line'>0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>(gdb) thread apply all bt
-</span><span class='line'>
-</span><span class='line'>Thread 3 (Thread 0x7ffff6ffd700 (LWP 3053)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x00000000004006da in threadFunction2 ()
-</span><span class='line'>#2  0x00007ffff7bc4e9a in start_thread () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#3  0x00007ffff78f238d in clone () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>#4  0x0000000000000000 in ?? ()
-</span><span class='line'>
-</span><span class='line'>Thread 2 (Thread 0x7ffff77fe700 (LWP 3052)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x000000000040068e in threadFunction1 ()
-</span><span class='line'>#2  0x00007ffff7bc4e9a in start_thread () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#3  0x00007ffff78f238d in clone () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>#4  0x0000000000000000 in ?? ()
-</span><span class='line'>
-</span><span class='line'>Thread 1 (Thread 0x7ffff7fe5700 (LWP 3049)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x0000000000400754 in main ()
-</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -3603,6 +3681,10 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/08/19/gdb-debugging-skills-6/">GDB Debugging Skills (6)</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/08/18/gdb-debugging-skills-5/">GDB Debugging Skills (5)</a>
         </li>
       
@@ -3616,10 +3698,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
       
         <li>
           <a href="/blog/2015/08/11/gdb-debugging-skills-2/">GDB Debugging Skills (2)</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/10/gdb-debugging-skills-1/">GDB Debugging Skills (1)</a>
         </li>
       
     </ul>

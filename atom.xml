@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-08-18T09:54:39+08:00</updated>
+  <updated>2015-08-19T01:22:32+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,292 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[GDB Debugging Skills (6)]]></title>
+    <link href="http://Bramante.github.io/blog/2015/08/19/gdb-debugging-skills-6/"/>
+    <updated>2015-08-19T00:53:37+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/08/19/gdb-debugging-skills-6</id>
+    <content type="html"><![CDATA[<p>假設在下面的程式裡, test()這個API是用來取得遙控器的key值的.
+正常狀況下test()只會送出系統所支援的A廠遙控器的key code (100~103).
+目前拿到一支B廠的遙控器, 它的key code是0~3, 要怎樣在不改code的狀況下,
+利用gdb的batch mode去attach執行中的process,
+讓gdb幫忙做key code的轉換, 好讓系統能支援B廠的遙控器.</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">test</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="o">*</span> <span class="n">getValue</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'> <span class="o">*</span><span class="n">getValue</span> <span class="o">=</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">4</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">return</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">getValue</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="o">&amp;</span><span class="n">getValue</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[*] value: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">getValue</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 16
+</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 19 01:08 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 11 23:32 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  385 Aug 19 00:50 gdb.cmds
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  463 Aug 19 00:21 test.c
+</span><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ ./test 15 &gt; /dev/null &
+</span><span class='line'>[1] 3027
+</span><span class='line'>bramante@matrix:~/test$ sudo gdb --batch --command=gdb.cmds --pid=3027
+</span><span class='line'>
+</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7fff23dfe000
+</span><span class='line'>0x00007f25b2148090 in nanosleep () from /lib/x86_64-linux-gnu/libc.so.6
+</span><span class='line'>Breakpoint 1 at 0x40058c: file ./test.c, line 8.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 103
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 100
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 101
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
+</span><span class='line'>8        *getValue = count % 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
+</span><span class='line'>23              printf("[*] value: %d\n",getValue);
+</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
+</span><span class='line'>11      }
+</span><span class='line'>9        count += 1 ;
+</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
+</span><span class='line'>*getValue: 102
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>[Inferior 1 (process 3027) exited normally]
+</span><span class='line'>[1]+  Done                    ./test 15 &gt; /dev/null
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>摘要出上面log裡的&#8221;*getValue: 10x&#8221;, 可以知道gdb的確幫忙做了key code的轉換:</p>
+
+<pre><code>*getValue: 103
+*getValue: 100
+*getValue: 101
+*getValue: 102
+</code></pre>
+
+<p>前面所用到的gdb.cmds檔案的內容如下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ cat gdb.cmds
+</span><span class='line'>b test
+</span><span class='line'>
+</span><span class='line'>define printFuncInfo
+</span><span class='line'>  record
+</span><span class='line'>  finish
+</span><span class='line'>  rs
+</span><span class='line'>  rn
+</span><span class='line'>  if *getValue == 0
+</span><span class='line'>    set *getValue=100
+</span><span class='line'>   else
+</span><span class='line'>    if *getValue == 1
+</span><span class='line'>      set *getValue=101
+</span><span class='line'>     else
+</span><span class='line'>      if *getValue == 2
+</span><span class='line'>        set *getValue=102
+</span><span class='line'>       else
+</span><span class='line'>        set *getValue=103
+</span><span class='line'>      end
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>  printf "*getValue: %d\n", *getValue
+</span><span class='line'>  record stop
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>commands 1
+</span><span class='line'>  printFuncInfo
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>continue
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>神奇吧, gdb還能幫忙轉換key code ~</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[GDB Debugging Skills (5)]]></title>
@@ -3945,36 +4231,6 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
 
 
 <p></font></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How to backup an old computer]]></title>
-    <link href="http://Bramante.github.io/blog/2015/07/23/how-to-backup-an-old-computer/"/>
-    <updated>2015-07-23T23:33:04+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/07/23/how-to-backup-an-old-computer</id>
-    <content type="html"><![CDATA[<p>電腦老舊之後, 會買新的電腦取代,
-有些資料很容易從舊電腦搬到新電腦,
-像影音檔之類的檔案, copy是很容易的,
-但是有些像email之類的資料,
-可能會因為email軟體的不同而需要轉檔,
-才能搬到新電腦, 這就很麻煩.
-如果遇到無法轉檔, 或新電腦與舊有軟體存在相容性的問題,
-那該怎麼辦?</p>
-
-<p>有個方法可以解決這個問題,
-就是把舊電腦給虛擬化,
-把它轉成vmware image,
-讓它擺脫老舊的硬體,
-在新電腦裡繼續存活下去,
-這樣還有個好處, 就是不用擔心有資料忘了copy出來,
-因為所有的內容都還在vmware image裡.</p>
-
-<p>Windows可以使用 VMware vCenter Converter 直接把電腦虛擬化,
-Linux則可以使用 MondoRescue, 先把電腦轉換成Rescue Image,
-然後再把Rescue Image &ldquo;還原&#8221;到vmware image上進行虛擬化,
-這2套軟體都是免費的, create vmware image有免費軟體可用,
-vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.</p>
 ]]></content>
   </entry>
   

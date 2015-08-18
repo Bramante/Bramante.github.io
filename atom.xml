@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-08-14T00:54:04+08:00</updated>
+  <updated>2015-08-18T09:54:39+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,459 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[GDB Debugging Skills (5)]]></title>
+    <link href="http://Bramante.github.io/blog/2015/08/18/gdb-debugging-skills-5/"/>
+    <updated>2015-08-18T09:24:13+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/08/18/gdb-debugging-skills-5</id>
+    <content type="html"><![CDATA[<p>debug時必需要能夠掌握程式的flow,
+API如果有多個return點,
+必須要知道程式到底從哪一個位置return,
+若要透過gdb取得這方面的資訊,
+手動加break point是比較麻煩的,
+較為自動化的方法可以使用gdb的reverse commands.</p>
+
+<p>下面示範如何在gdb的batch mode去attach執行中的process,
+並印出API在哪一行return的.</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">unsigned</span> <span class="kt">int</span> <span class="nf">test</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="n">arg</span> <span class="o">%=</span> <span class="mi">4</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">switch</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">0</span><span class="o">:</span>
+</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
+</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">1</span><span class="o">:</span>
+</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
+</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">2</span><span class="o">:</span>
+</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
+</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">3</span><span class="o">:</span>
+</span><span class='line'>    <span class="k">default</span><span class="o">:</span>
+</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
+</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 16
+</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 18 09:37 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 11 23:32 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  154 Aug 18 09:20 gdb.cmds
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  581 Aug 18 09:18 test.c
+</span><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ ./test 15 &gt; /dev/null &
+</span><span class='line'>[1] 2927
+</span><span class='line'>bramante@matrix:~/test$ sudo gdb --batch --command=gdb.cmds --pid=2927
+</span><span class='line'>[sudo] password for bramante:
+</span><span class='line'>0x00007f287fe2a090 in nanosleep () from /lib/x86_64-linux-gnu/libc.so.6
+</span><span class='line'>Breakpoint 1 at 0x40054b: file ./test.c, line 7.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=10) at ./test.c:7
+</span><span class='line'>7        arg %= 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
+</span><span class='line'>36              sleep(1);
+</span><span class='line'>Value returned is $1 = 2
+</span><span class='line'>test (arg=2) at ./test.c:25
+</span><span class='line'>25      }
+</span><span class='line'>17                 return arg ;
+</span><span class='line'>arg: 2
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=11) at ./test.c:7
+</span><span class='line'>7        arg %= 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
+</span><span class='line'>36              sleep(1);
+</span><span class='line'>Value returned is $2 = 3
+</span><span class='line'>test (arg=3) at ./test.c:25
+</span><span class='line'>25      }
+</span><span class='line'>21                 return arg ;
+</span><span class='line'>arg: 3
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=12) at ./test.c:7
+</span><span class='line'>7        arg %= 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
+</span><span class='line'>36              sleep(1);
+</span><span class='line'>Value returned is $3 = 0
+</span><span class='line'>test (arg=0) at ./test.c:25
+</span><span class='line'>25      }
+</span><span class='line'>11                 return arg ;
+</span><span class='line'>arg: 0
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=13) at ./test.c:7
+</span><span class='line'>7        arg %= 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
+</span><span class='line'>36              sleep(1);
+</span><span class='line'>Value returned is $4 = 1
+</span><span class='line'>test (arg=1) at ./test.c:25
+</span><span class='line'>25      }
+</span><span class='line'>14                 return arg ;
+</span><span class='line'>arg: 1
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=14) at ./test.c:7
+</span><span class='line'>7        arg %= 4 ;
+</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
+</span><span class='line'>36              sleep(1);
+</span><span class='line'>Value returned is $5 = 2
+</span><span class='line'>test (arg=2) at ./test.c:25
+</span><span class='line'>25      }
+</span><span class='line'>17                 return arg ;
+</span><span class='line'>arg: 2
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>[Inferior 1 (process 2927) exited normally]
+</span><span class='line'>[1]+  Done                    ./test 15 &gt; /dev/null
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>摘要出上面log裡的&#8221;return arg&#8221;, 可以知道return點有4個,
+分別在 11, 14, 17, 21 行:</p>
+
+<pre><code>17                 return arg ;
+21                 return arg ;
+11                 return arg ;
+14                 return arg ;
+17                 return arg ;
+</code></pre>
+
+<p>前面所用到的gdb.cmds檔案的內容如下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ cat gdb.cmds
+</span><span class='line'>b test
+</span><span class='line'>
+</span><span class='line'>define printFuncInfo
+</span><span class='line'>  record
+</span><span class='line'>  finish
+</span><span class='line'>  rs
+</span><span class='line'>  rn
+</span><span class='line'>  printf "arg: %d\n", arg
+</span><span class='line'>  record stop
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>commands 1
+</span><span class='line'>  printFuncInfo
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>continue
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>要使用reverse command前要先record,
+使用後要record stop,
+其中的rs是reverse-step,
+rn則是reverse-next,
+reverse command的執行方向與正常的command相反.
+由於finish時已經回到main(), 因此需要先執行rs回到test(),
+再執行rn找到return點.</p>
+
+<p>沒有source code時的執行狀況如下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ./test 10 &gt; /dev/null &
+</span><span class='line'>[1] 2968
+</span><span class='line'>bramante@matrix:~/test$ sudo gdb --batch --command=gdb.cmds --pid=2968
+</span><span class='line'>0x00007f4f518f3090 in nanosleep () from /lib/x86_64-linux-gnu/libc.so.6
+</span><span class='line'>Breakpoint 1 at 0x40054b: file ./test.c, line 7.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=5) at ./test.c:7
+</span><span class='line'>7       ./test.c: No such file or directory.
+</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
+</span><span class='line'>36      in ./test.c
+</span><span class='line'>Value returned is $1 = 1
+</span><span class='line'>test (arg=1) at ./test.c:25
+</span><span class='line'>25      in ./test.c
+</span><span class='line'>14      in ./test.c
+</span><span class='line'>arg: 1
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=6) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
+</span><span class='line'>36      in ./test.c
+</span><span class='line'>Value returned is $2 = 2
+</span><span class='line'>test (arg=2) at ./test.c:25
+</span><span class='line'>25      in ./test.c
+</span><span class='line'>17      in ./test.c
+</span><span class='line'>arg: 2
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=7) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
+</span><span class='line'>36      in ./test.c
+</span><span class='line'>Value returned is $3 = 3
+</span><span class='line'>test (arg=3) at ./test.c:25
+</span><span class='line'>25      in ./test.c
+</span><span class='line'>21      in ./test.c
+</span><span class='line'>arg: 3
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=8) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
+</span><span class='line'>36      in ./test.c
+</span><span class='line'>Value returned is $4 = 0
+</span><span class='line'>test (arg=0) at ./test.c:25
+</span><span class='line'>25      in ./test.c
+</span><span class='line'>11      in ./test.c
+</span><span class='line'>arg: 0
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=9) at ./test.c:7
+</span><span class='line'>7       in ./test.c
+</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
+</span><span class='line'>36      in ./test.c
+</span><span class='line'>Value returned is $5 = 1
+</span><span class='line'>test (arg=1) at ./test.c:25
+</span><span class='line'>25      in ./test.c
+</span><span class='line'>14      in ./test.c
+</span><span class='line'>arg: 1
+</span><span class='line'>Process record is stopped and all execution logs are deleted.
+</span><span class='line'>[Inferior 1 (process 2968) exited normally]
+</span><span class='line'>[1]+  Done                    ./test 10 &gt; /dev/null
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>在 <a href="http://www.gnu.org/software/gdb/news">http://www.gnu.org/software/gdb/news</a>
+ 有提到, GDB 7.5之後才支援ARM.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[GDB Debugging Skills (4)]]></title>
@@ -3522,186 +3975,6 @@ Linux則可以使用 MondoRescue, 先把電腦轉換成Rescue Image,
 然後再把Rescue Image &ldquo;還原&#8221;到vmware image上進行虛擬化,
 這2套軟體都是免費的, create vmware image有免費軟體可用,
 vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ttf2png]]></title>
-    <link href="http://Bramante.github.io/blog/2015/07/22/ttf2png/"/>
-    <updated>2015-07-22T00:33:58+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/07/22/ttf2png</id>
-    <content type="html"><![CDATA[<p>想要看TTF字型檔裡有哪些字,
-可以利用ttf2png把字型檔的內容dump到png圖檔裡來看.</p>
-
-<p>下載ttf2png的source code:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ mkdir test_ttf2png
-</span><span class='line'>bramante@matrix:~$ cd test_ttf2png/
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ wget http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
-</span><span class='line'>--2015-07-21 12:40:49--  http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
-</span><span class='line'>Resolving sid.ethz.ch (sid.ethz.ch)... 192.33.97.200
-</span><span class='line'>Connecting to sid.ethz.ch (sid.ethz.ch)|192.33.97.200|:80... connected.
-</span><span class='line'>HTTP request sent, awaiting response... 200 OK
-</span><span class='line'>Length: 11538 (11K) [application/octet-stream]
-</span><span class='line'>Saving to: `ttf2png-0.3.tar.gz'
-</span><span class='line'>
-</span><span class='line'>100%[==============================================================================================================================&gt;] 11,538      --.-K/s   in 0.004s
-</span><span class='line'>
-</span><span class='line'>2015-07-21 12:40:51 (3.13 MB/s) - `ttf2png-0.3.tar.gz' saved [11538/11538]
-</span><span class='line'>
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
-</span><span class='line'>total 20
-</span><span class='line'>drwxrwxr-x  2 bramante bramante  4096 Jul 21 12:40 ./
-</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
-</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
-</span><span class='line'>bramante@matrix:~/test_ttf2png$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>Build出ttf2png:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png$ tar xzf ttf2png-0.3.tar.gz
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
-</span><span class='line'>total 24
-</span><span class='line'>drwxrwxr-x  3 bramante bramante  4096 Jul 21 12:41 ./
-</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
-</span><span class='line'>drwxr-xr-x  2 bramante bramante  4096 Nov  3  2008 ttf2png-0.3/
-</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
-</span><span class='line'>bramante@matrix:~/test_ttf2png$ cd ttf2png-0.3/
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 52
-</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Nov  3  2008 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ make
-</span><span class='line'>gcc -Wall ttf2png.c -o ttf2png -I/usr/include/freetype2 -L/usr/lib/x86_64-linux-gnu -lfreetype -lz -I/usr/include/libpng12  -lpng12
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 76
-</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Jul 21 12:41 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
-</span><span class='line'>-rwxrwxr-x 1 bramante bramante 22643 Jul 21 12:41 ttf2png*
-</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>把Windows 7裡的times.ttf拿來dump一下:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 892
-</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:46 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
-</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ./ttf2png  -l 11 -s 18 -e -o ./times.png ./times.ttf
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
-</span><span class='line'>total 904
-</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:47 ./
-</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
-</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
-</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante  12206 Jul 21 12:47 times.png
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
-</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
-</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
-</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>得到的times.png如下, 可以看到times.ttf裡有哪些字:</p>
-
-<p><img class="left" src="http://Bramante.github.io/images/2015-07-22-ttf2png/times.png" width="512" height="1024" title="times.png" ></p>
 ]]></content>
   </entry>
   

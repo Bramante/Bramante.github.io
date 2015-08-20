@@ -126,6 +126,281 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/08/20/demangle-c-plus-plus-symbols/">Demangle C++ Symbols</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-20T09:26:40+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/08/20/demangle-c-plus-plus-symbols/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>當我們在debug時, 有時候會遇到未經demangle過的C++ symbol name,
+乍看之下, 常常不太能確定這到底是哪個API,
+這時可以用c++filt把這樣的symbol name轉換(demangle)成我們看得懂的symbol name.</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>C++FILT(1)                                                             GNU Development Tools                                                             C++FILT(1)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>NAME
+</span><span class='line'>       c++filt - Demangle C++ and Java symbols.
+</span><span class='line'>
+</span><span class='line'>SYNOPSIS
+</span><span class='line'>       c++filt [-_|--strip-underscores]
+</span><span class='line'>               [-n|--no-strip-underscores]
+</span><span class='line'>               [-p|--no-params]
+</span><span class='line'>               [-t|--types]
+</span><span class='line'>               [-i|--no-verbose]
+</span><span class='line'>               [-s format|--format=format]
+</span><span class='line'>               [--help]  [--version]  [symbol...]
+</span><span class='line'>
+</span><span class='line'>DESCRIPTION
+</span><span class='line'>       The C++ and Java languages provide function overloading, which means that you can write many functions with the same name, providing that each function
+</span><span class='line'>       takes parameters of different types.  In order to be able to distinguish these similarly named functions C++ and Java encode them into a low-level assembler
+</span><span class='line'>       name which uniquely identifies each different version.  This process is known as mangling. The c++filt [1] program does the inverse mapping: it decodes
+</span><span class='line'>       (demangles) low-level names into user-level names so that they can be read.
+</span><span class='line'>
+</span><span class='line'>       Every alphanumeric word (consisting of letters, digits, underscores, dollars, or periods) seen in the input is a potential mangled name.  If the name
+</span><span class='line'>       decodes into a C++ name, the C++ name replaces the low-level name in the output, otherwise the original word is output.  In this way you can pass an entire
+</span><span class='line'>       assembler source file, containing mangled names, through c++filt and see the same source file containing demangled names.
+</span><span class='line'>
+</span><span class='line'>       You can also use c++filt to decipher individual symbols by passing them on the command line:
+</span><span class='line'>
+</span><span class='line'>               c++filt &lt;symbol&gt;
+</span><span class='line'>
+</span><span class='line'>       If no symbol arguments are given, c++filt reads symbol names from the standard input instead.  All the results are printed on the standard output.  The
+</span><span class='line'>       difference between reading names from the command line versus reading names from the standard input is that command line arguments are expected to be just
+</span><span class='line'>       mangled names and no checking is performed to separate them from surrounding text.  Thus for example:
+</span><span class='line'>
+</span><span class='line'>               c++filt -n _Z1fv
+</span><span class='line'>
+</span><span class='line'>       will work and demangle the name to "f()" whereas:
+</span><span class='line'>
+</span><span class='line'>               c++filt -n _Z1fv,
+</span><span class='line'>
+</span><span class='line'>       will not work.  (Note the extra comma at the end of the mangled name which makes it invalid).  This command however will work:
+</span><span class='line'>
+</span><span class='line'>               echo _Z1fv, | c++filt -n
+</span><span class='line'>
+</span><span class='line'>       and will display "f(),", i.e., the demangled name followed by a trailing comma.  This behaviour is because when the names are read from the standard input
+</span><span class='line'>       it is expected that they might be part of an assembler source file where there might be extra, extraneous characters trailing after a mangled name.  For
+</span><span class='line'>       example:
+</span><span class='line'>
+</span><span class='line'>                   .type   _Z1fv, @function
+</span><span class='line'>
+</span><span class='line'>OPTIONS
+</span><span class='line'>       -_
+</span><span class='line'>       --strip-underscores
+</span><span class='line'>           On some systems, both the C and C++ compilers put an underscore in front of every name.  For example, the C name "foo" gets the low-level name "_foo".
+</span><span class='line'>           This option removes the initial underscore.  Whether c++filt removes the underscore by default is target dependent.
+</span><span class='line'>
+</span><span class='line'>       -n
+</span><span class='line'>       --no-strip-underscores
+</span><span class='line'>           Do not remove the initial underscore.
+</span><span class='line'>....</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>找幾個C++的symbol name來示範一下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ objdump -R /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | tail -n 11
+</span><span class='line'>0000000000244368 R_X86_64_JUMP_SLOT  _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
+</span><span class='line'>0000000000244370 R_X86_64_JUMP_SLOT  _ZNK7QString10startsWithERKS_N2Qt15CaseSensitivityE
+</span><span class='line'>0000000000244378 R_X86_64_JUMP_SLOT  _Znwm
+</span><span class='line'>0000000000244380 R_X86_64_JUMP_SLOT  _ZNK10QTextCodec9canEncodeE5QChar
+</span><span class='line'>0000000000244388 R_X86_64_JUMP_SLOT  _Unwind_Resume
+</span><span class='line'>0000000000244390 R_X86_64_JUMP_SLOT  _ZNK7QString10simplifiedEv
+</span><span class='line'>0000000000244398 R_X86_64_JUMP_SLOT  memcpy
+</span><span class='line'>00000000002443a0 R_X86_64_JUMP_SLOT  _ZN7QString7reallocEi
+</span><span class='line'>00000000002443a8 R_X86_64_JUMP_SLOT  _ZN10QByteArray6appendERKS_
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
+</span><span class='line'>QTextStream::QTextStream(QString*, QFlags&lt;QIODevice::OpenModeFlag&gt;)
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK7QString10startsWithERKS_N2Qt15CaseSensitivityE
+</span><span class='line'>QString::startsWith(QString const&, Qt::CaseSensitivity) const
+</span><span class='line'>bramante@matrix:~$ c++filt -n _Znwm
+</span><span class='line'>operator new(unsigned long)
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK10QTextCodec9canEncodeE5QChar
+</span><span class='line'>QTextCodec::canEncode(QChar) const
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK7QString10simplifiedEv
+</span><span class='line'>QString::simplified() const
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN7QString7reallocEi
+</span><span class='line'>QString::realloc(int)
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN10QByteArray6appendERKS_
+</span><span class='line'>QByteArray::append(QByteArray const&)
+</span><span class='line'>bramante@matrix:~$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>請注意, 過長的symbol name會被readelf截去尾巴,
+導致c++filt無法demangle出正確的symbol name,
+這時請在readelf使用&#8221;-W&#8221;參數, 讓readelf印出完整的symbol name,
+以下是操作範例:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ readelf -a /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | grep 244368
+</span><span class='line'>000000244368  007a00000007 R_X86_64_JUMP_SLO 0000000000000000 _ZN11QTextStreamC1EP7Q + 0
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7Q
+</span><span class='line'>_ZN11QTextStreamC1EP7Q
+</span><span class='line'>bramante@matrix:~$ readelf -Wa /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | grep 244368
+</span><span class='line'>0000000000244368  0000007a00000007 R_X86_64_JUMP_SLOT     0000000000000000 _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE + 0
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
+</span><span class='line'>QTextStream::QTextStream(QString*, QFlags&lt;QIODevice::OpenModeFlag&gt;)
+</span><span class='line'>bramante@matrix:~$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/08/19/gdb-debugging-skills-6/">GDB Debugging Skills (6)</a></h1>
         
     
@@ -3496,174 +3771,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/06/nanosleep/">Nanosleep</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-06T00:16:39+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/06/nanosleep/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在nanosleep()的說明裡, 有提到它可能會被signal handler所打斷.</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>NANOSLEEP(2)                                                         Linux Programmer's Manual                                                         NANOSLEEP(2)
-</span><span class='line'>
-</span><span class='line'>NAME
-</span><span class='line'>       nanosleep - high-resolution sleep
-</span><span class='line'>
-</span><span class='line'>SYNOPSIS
-</span><span class='line'>       #include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'>       int nanosleep(const struct timespec *req, struct timespec *rem);
-</span><span class='line'>
-</span><span class='line'>   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
-</span><span class='line'>
-</span><span class='line'>       nanosleep(): _POSIX_C_SOURCE &gt;= 199309L
-</span><span class='line'>
-</span><span class='line'>DESCRIPTION
-</span><span class='line'>       nanosleep()  suspends  the  execution  of  the calling thread until either at least the time specified in *req has elapsed, or the delivery of a signal that
-</span><span class='line'>       triggers the invocation of a handler in the calling thread or that terminates the process.
-</span><span class='line'>
-</span><span class='line'>       If the call is interrupted by a signal handler, nanosleep() returns -1, sets errno to EINTR, and writes the remaining time into the structure pointed to  by
-</span><span class='line'>       rem unless rem is NULL.  The value of *rem can then be used to call nanosleep() again and complete the specified pause (but see NOTES).
-</span><span class='line'>
-</span><span class='line'>       The structure timespec is used to specify intervals of time with nanosecond precision.  It is defined as follows:
-</span><span class='line'>
-</span><span class='line'>           struct timespec {
-</span><span class='line'>               time_t tv_sec;        /* seconds */
-</span><span class='line'>               long   tv_nsec;       /* nanoseconds */
-</span><span class='line'>           };
-</span><span class='line'>
-</span><span class='line'>       The value of the nanoseconds field must be in the range 0 to 999999999.
-</span><span class='line'>
-</span><span class='line'>       Compared  to  sleep(3)  and  usleep(3), nanosleep() has the following advantages: it provides a higher resolution for specifying the sleep interval; POSIX.1
-</span><span class='line'>       explicitly specifies that it does not interact with signals; and it makes the task of resuming a sleep that has been interrupted by a signal handler easier.
-</span><span class='line'>
-</span><span class='line'>RETURN VALUE
-</span><span class='line'>       On successfully sleeping for the requested interval, nanosleep() returns 0.  If the call is interrupted by a signal handler or encounters an error, then  it
-</span><span class='line'>       returns -1, with errno set to indicate the error.</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>如果沒有考量到nanosleep()被signal handler打斷的狀況, sleep的時間有可能會達不到預期的長度. Random發生沒有sleep到充足時間, 有可能會造成程式發生random的bug, 因此不要小看這個問題.</p>
-
-<figure class='code'><figcaption><span>錯誤的用法</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define MY_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         nanosleep(&amp;delay,NULL) ;\</span>
-</span><span class='line'><span class="cp">        }</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>正確的用法應該如下, 才能確保sleep的時間達到預期的要求.</p>
-
-<figure class='code'><figcaption><span>正確的用法</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define MY_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay, rem ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         while(nanosleep(&amp;delay, &amp;rem) == -1 &amp;&amp; errno == EINTR) delay = rem;\</span>
-</span><span class='line'><span class="cp">        } </span>
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -3681,6 +3788,10 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/08/20/demangle-c-plus-plus-symbols/">Demangle C++ Symbols</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/08/19/gdb-debugging-skills-6/">GDB Debugging Skills (6)</a>
         </li>
       
@@ -3694,10 +3805,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
       
         <li>
           <a href="/blog/2015/08/13/gdb-debugging-skills-3/">GDB Debugging Skills (3)</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/11/gdb-debugging-skills-2/">GDB Debugging Skills (2)</a>
         </li>
       
     </ul>

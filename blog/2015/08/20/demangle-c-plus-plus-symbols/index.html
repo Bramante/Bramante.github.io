@@ -1,0 +1,527 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Demangle C++ Symbols - Bramante&#x27;s Blog</title>
+  <meta name="author" content="Bramante">
+  <link rel="author" href="humans.txt">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  
+    
+  
+  <meta name="description" content="當我們在debug時, 有時候會遇到未經demangle過的C++ symbol name,
+乍看之下, 常常不太能確定這到底是哪個API,
+這時可以用c++filt把這樣的symbol name轉換(demangle)成我們看得懂的symbol name. Terminal1
+2
+3
+4
+5 &hellip;">
+  
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/20/demangle-c-plus-plus-symbols/">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
+  <meta name="og:type" content="website" />
+  <meta name="og:site_name" content="Bramante&#x27;s Blog" />
+  <meta name="og:title" content="Demangle C++ Symbols" />
+  <meta name="og:description" content="當我們在debug時, 有時候會遇到未經demangle過的C++ symbol name,
+乍看之下, 常常不太能確定這到底是哪個API,
+這時可以用c++filt把這樣的symbol name轉換(demangle)成我們看得懂的symbol name. Terminal1
+2
+3
+4
+5 &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/20/demangle-c-plus-plus-symbols/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/08/20/demangle-c-plus-plus-symbols/">
+  
+  <meta name="subject" content=""/>
+  <meta name="category" content=""/>
+  
+  <meta name="distribution" content="global">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <nav role="navigation"><div class="navbar">
+  <div class="navbar-inner">
+    <a class="brand" href="/">Bramante&#x27;s Blog</a>
+    <ul class="nav">
+      <li><a href="/">Home</a></li>
+      <li><a href="/blog/archives">Archives</a></li>
+    </ul>
+    <ul class="nav" data-subscription="rss">
+      <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+      
+    </ul>
+      
+    <form class="navbar-form" action="https://www.google.com/search" method="get">
+      <fieldset role="search">
+        <input type="hidden" name="q" value="site:Bramante.github.io" />
+        <input class="span2" type="text" name="q" results="0" placeholder="Search"/>
+      </fieldset>
+    </form>
+      
+    
+  </div>
+</div>
+</nav>
+  <div class="wrapper_single">
+    <div class="container">
+      <div class="row">
+        <article class="span8 offset2" role="article">
+          <div class="article-format">
+
+  <header>
+    
+      
+        <h1 class="entry-title">Demangle C++ Symbols</h1>
+      
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-20T09:26:40+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>當我們在debug時, 有時候會遇到未經demangle過的C++ symbol name,
+乍看之下, 常常不太能確定這到底是哪個API,
+這時可以用c++filt把這樣的symbol name轉換(demangle)成我們看得懂的symbol name.</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>C++FILT(1)                                                             GNU Development Tools                                                             C++FILT(1)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>NAME
+</span><span class='line'>       c++filt - Demangle C++ and Java symbols.
+</span><span class='line'>
+</span><span class='line'>SYNOPSIS
+</span><span class='line'>       c++filt [-_|--strip-underscores]
+</span><span class='line'>               [-n|--no-strip-underscores]
+</span><span class='line'>               [-p|--no-params]
+</span><span class='line'>               [-t|--types]
+</span><span class='line'>               [-i|--no-verbose]
+</span><span class='line'>               [-s format|--format=format]
+</span><span class='line'>               [--help]  [--version]  [symbol...]
+</span><span class='line'>
+</span><span class='line'>DESCRIPTION
+</span><span class='line'>       The C++ and Java languages provide function overloading, which means that you can write many functions with the same name, providing that each function
+</span><span class='line'>       takes parameters of different types.  In order to be able to distinguish these similarly named functions C++ and Java encode them into a low-level assembler
+</span><span class='line'>       name which uniquely identifies each different version.  This process is known as mangling. The c++filt [1] program does the inverse mapping: it decodes
+</span><span class='line'>       (demangles) low-level names into user-level names so that they can be read.
+</span><span class='line'>
+</span><span class='line'>       Every alphanumeric word (consisting of letters, digits, underscores, dollars, or periods) seen in the input is a potential mangled name.  If the name
+</span><span class='line'>       decodes into a C++ name, the C++ name replaces the low-level name in the output, otherwise the original word is output.  In this way you can pass an entire
+</span><span class='line'>       assembler source file, containing mangled names, through c++filt and see the same source file containing demangled names.
+</span><span class='line'>
+</span><span class='line'>       You can also use c++filt to decipher individual symbols by passing them on the command line:
+</span><span class='line'>
+</span><span class='line'>               c++filt &lt;symbol&gt;
+</span><span class='line'>
+</span><span class='line'>       If no symbol arguments are given, c++filt reads symbol names from the standard input instead.  All the results are printed on the standard output.  The
+</span><span class='line'>       difference between reading names from the command line versus reading names from the standard input is that command line arguments are expected to be just
+</span><span class='line'>       mangled names and no checking is performed to separate them from surrounding text.  Thus for example:
+</span><span class='line'>
+</span><span class='line'>               c++filt -n _Z1fv
+</span><span class='line'>
+</span><span class='line'>       will work and demangle the name to "f()" whereas:
+</span><span class='line'>
+</span><span class='line'>               c++filt -n _Z1fv,
+</span><span class='line'>
+</span><span class='line'>       will not work.  (Note the extra comma at the end of the mangled name which makes it invalid).  This command however will work:
+</span><span class='line'>
+</span><span class='line'>               echo _Z1fv, | c++filt -n
+</span><span class='line'>
+</span><span class='line'>       and will display "f(),", i.e., the demangled name followed by a trailing comma.  This behaviour is because when the names are read from the standard input
+</span><span class='line'>       it is expected that they might be part of an assembler source file where there might be extra, extraneous characters trailing after a mangled name.  For
+</span><span class='line'>       example:
+</span><span class='line'>
+</span><span class='line'>                   .type   _Z1fv, @function
+</span><span class='line'>
+</span><span class='line'>OPTIONS
+</span><span class='line'>       -_
+</span><span class='line'>       --strip-underscores
+</span><span class='line'>           On some systems, both the C and C++ compilers put an underscore in front of every name.  For example, the C name "foo" gets the low-level name "_foo".
+</span><span class='line'>           This option removes the initial underscore.  Whether c++filt removes the underscore by default is target dependent.
+</span><span class='line'>
+</span><span class='line'>       -n
+</span><span class='line'>       --no-strip-underscores
+</span><span class='line'>           Do not remove the initial underscore.
+</span><span class='line'>....</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>找幾個C++的symbol name來示範一下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ objdump -R /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | tail -n 11
+</span><span class='line'>0000000000244368 R_X86_64_JUMP_SLOT  _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
+</span><span class='line'>0000000000244370 R_X86_64_JUMP_SLOT  _ZNK7QString10startsWithERKS_N2Qt15CaseSensitivityE
+</span><span class='line'>0000000000244378 R_X86_64_JUMP_SLOT  _Znwm
+</span><span class='line'>0000000000244380 R_X86_64_JUMP_SLOT  _ZNK10QTextCodec9canEncodeE5QChar
+</span><span class='line'>0000000000244388 R_X86_64_JUMP_SLOT  _Unwind_Resume
+</span><span class='line'>0000000000244390 R_X86_64_JUMP_SLOT  _ZNK7QString10simplifiedEv
+</span><span class='line'>0000000000244398 R_X86_64_JUMP_SLOT  memcpy
+</span><span class='line'>00000000002443a0 R_X86_64_JUMP_SLOT  _ZN7QString7reallocEi
+</span><span class='line'>00000000002443a8 R_X86_64_JUMP_SLOT  _ZN10QByteArray6appendERKS_
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
+</span><span class='line'>QTextStream::QTextStream(QString*, QFlags&lt;QIODevice::OpenModeFlag&gt;)
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK7QString10startsWithERKS_N2Qt15CaseSensitivityE
+</span><span class='line'>QString::startsWith(QString const&, Qt::CaseSensitivity) const
+</span><span class='line'>bramante@matrix:~$ c++filt -n _Znwm
+</span><span class='line'>operator new(unsigned long)
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK10QTextCodec9canEncodeE5QChar
+</span><span class='line'>QTextCodec::canEncode(QChar) const
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK7QString10simplifiedEv
+</span><span class='line'>QString::simplified() const
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN7QString7reallocEi
+</span><span class='line'>QString::realloc(int)
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN10QByteArray6appendERKS_
+</span><span class='line'>QByteArray::append(QByteArray const&)
+</span><span class='line'>bramante@matrix:~$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>請注意, 過長的symbol name會被readelf截去尾巴,
+導致c++filt無法demangle出正確的symbol name,
+這時請在readelf使用&#8221;-W&#8221;參數, 讓readelf印出完整的symbol name,
+以下是操作範例:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ readelf -a /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | grep 244368
+</span><span class='line'>000000244368  007a00000007 R_X86_64_JUMP_SLO 0000000000000000 _ZN11QTextStreamC1EP7Q + 0
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7Q
+</span><span class='line'>_ZN11QTextStreamC1EP7Q
+</span><span class='line'>bramante@matrix:~$ readelf -Wa /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | grep 244368
+</span><span class='line'>0000000000244368  0000007a00000007 R_X86_64_JUMP_SLOT     0000000000000000 _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE + 0
+</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
+</span><span class='line'>QTextStream::QTextStream(QString*, QFlags&lt;QIODevice::OpenModeFlag&gt;)
+</span><span class='line'>bramante@matrix:~$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+</div>
+
+
+
+
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-20T09:26:40+08:00" pubdate data-updated="true"></time> - 
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/20/demangle-c-plus-plus-symbols/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/20/demangle-c-plus-plus-symbols/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    
+      <a class="pull-left" href="/blog/2015/08/19/gdb-debugging-skills-6/" title="Previous Post: GDB Debugging Skills (6)">&laquo; GDB Debugging Skills (6)</a>
+    
+    
+  </footer>
+
+</div>
+
+          
+            <div class="article-format">
+              <h1>Comments</h1>
+              <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            </div>
+          
+        </article>
+      </div>
+    </div>
+  </div>
+  <div id="footer-widgets">
+  <div class="container">
+    <div class="row">
+  <div class="span3">
+    
+
+  </div>
+  <div class="span3">
+    <h2>recent posts</h2>
+    <ul class="recent_posts">
+      
+        <li>
+          <a href="/blog/2015/08/20/demangle-c-plus-plus-symbols/">Demangle C++ Symbols</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/19/gdb-debugging-skills-6/">GDB Debugging Skills (6)</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/18/gdb-debugging-skills-5/">GDB Debugging Skills (5)</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/14/gdb-debugging-skills-4/">GDB Debugging Skills (4)</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/13/gdb-debugging-skills-3/">GDB Debugging Skills (3)</a>
+        </li>
+      
+    </ul>
+    <h2><a href="/blog/archives">archives</a></h2>
+  </div>
+  <div class="span4">
+    
+
+  </div>
+  <div class="span6">    
+    <h2>flag counter</h2>  
+<a href="http://info.flagcounter.com/83y3"><img src="http://s09.flagcounter.com/count2/83y3/bg_FFFFFF/txt_000000/border_CCCCCC/columns_3/maxflags_12/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" align="left" alt="Flag Counter" border="0"></a>
+
+ 
+
+
+
+  </div>
+</div>
+
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-left">
+  <a href="/">Bramante&#x27;s Blog</a>
+  - Copyright &copy; 2015 - Bramante
+</p>
+<p class="pull-right">
+  <span>Powered by <a href="http://octopress.org/">Octopress</a>.</span>
+  
+    <span>Designed by <a href="http://www.AdrianArtiles.com">Adrian Artiles</a>.</span>
+  
+</p>
+
+  </div>
+</footer>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/libs/jquery-1.7.2.min.js" type="text/javascript"><\/script>')</script>
+<script src="/javascripts/libs/bootstrap.min.js" type="text/javascript"></script>
+<script src="/javascripts/jquery.tweet.js" type="text/javascript"></script>
+<script src="/javascripts/jquery.instagram.js" type="text/javascript"></script>
+<script src="/javascripts/libs/jquery.masonry.min.js" type="text/javascript"></script>
+<script src="/javascripts/custom.js" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'bramantesblog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F20%2Fdemangle-c-plus-plus-symbols%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F20%2Fdemangle-c-plus-plus-symbols%2F';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+</body>
+</html>

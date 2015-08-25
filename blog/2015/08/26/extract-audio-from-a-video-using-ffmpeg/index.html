@@ -1,0 +1,547 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Extract Audio From a Video Using FFmpeg - Bramante&#x27;s Blog</title>
+  <meta name="author" content="Bramante">
+  <link rel="author" href="humans.txt">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  
+    
+  
+  <meta name="description" content="使用FFmpeg可以很容易地把Audio由TS file裡頭給分離出來,
+如果Audio是使用MPEG Audio來Encode的,
+那麼把分離出的Audio另存成*.mp3的file,
+就可以直接用一般的軟體來播放. 以下是操作範例: Terminal1
+2
+3
+4
+5
+6
+7
+8
+9
+10 &hellip;">
+  
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
+  <meta name="og:type" content="website" />
+  <meta name="og:site_name" content="Bramante&#x27;s Blog" />
+  <meta name="og:title" content="Extract Audio From a Video Using FFmpeg" />
+  <meta name="og:description" content="使用FFmpeg可以很容易地把Audio由TS file裡頭給分離出來,
+如果Audio是使用MPEG Audio來Encode的,
+那麼把分離出的Audio另存成*.mp3的file,
+就可以直接用一般的軟體來播放. 以下是操作範例: Terminal1
+2
+3
+4
+5
+6
+7
+8
+9
+10 &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/">
+  
+  <meta name="subject" content=""/>
+  <meta name="category" content=""/>
+  
+  <meta name="distribution" content="global">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <nav role="navigation"><div class="navbar">
+  <div class="navbar-inner">
+    <a class="brand" href="/">Bramante&#x27;s Blog</a>
+    <ul class="nav">
+      <li><a href="/">Home</a></li>
+      <li><a href="/blog/archives">Archives</a></li>
+    </ul>
+    <ul class="nav" data-subscription="rss">
+      <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+      
+    </ul>
+      
+    <form class="navbar-form" action="https://www.google.com/search" method="get">
+      <fieldset role="search">
+        <input type="hidden" name="q" value="site:Bramante.github.io" />
+        <input class="span2" type="text" name="q" results="0" placeholder="Search"/>
+      </fieldset>
+    </form>
+      
+    
+  </div>
+</div>
+</nav>
+  <div class="wrapper_single">
+    <div class="container">
+      <div class="row">
+        <article class="span8 offset2" role="article">
+          <div class="article-format">
+
+  <header>
+    
+      
+        <h1 class="entry-title">Extract Audio From a Video Using FFmpeg</h1>
+      
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-26T00:02:31+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>使用FFmpeg可以很容易地把Audio由TS file裡頭給分離出來,
+如果Audio是使用MPEG Audio來Encode的,
+那麼把分離出的Audio另存成*.mp3的file,
+就可以直接用一般的軟體來播放.</p>
+
+<p>以下是操作範例:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test/audio$ ll
+</span><span class='line'>total 10592
+</span><span class='line'>drwxrwxr-x 2 bramante bramante     4096 Aug 24 17:52 ./
+</span><span class='line'>drwxrwxr-x 4 bramante bramante     4096 Aug 24 17:51 ../
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 10834252 Aug 24 17:25 demo.ts*
+</span><span class='line'>bramante@matrix:~/test/audio$ ffmpeg -i demo.ts -acodec copy demo.mp3
+</span><span class='line'>ffmpeg version 0.8.17-4:0.8.17-0ubuntu0.12.04.1, Copyright (c) 2000-2014 the Libav developers
+</span><span class='line'>  built on Mar 16 2015 13:26:50 with gcc 4.6.3
+</span><span class='line'>The ffmpeg program is only provided for script compatibility and will be removed
+</span><span class='line'>in a future release. It has been deprecated in the Libav project to allow for
+</span><span class='line'>incompatible command line syntax improvements in its replacement called avconv
+</span><span class='line'>(see Changelog for details). Please use avconv instead.
+</span><span class='line'>[mp3 @ 0x86dd60] Header missing
+</span><span class='line'>[mpegts @ 0x8337a0] max_analyze_duration reached
+</span><span class='line'>[NULL @ 0x878c40] start time is not set in estimate_timings_from_pts
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 9 got 7
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1601 expected 13 got 2
+</span><span class='line'>Input #0, mpegts, from 'demo.ts':
+</span><span class='line'>  Duration: 26:30:41.26, start: 50944.346833, bitrate: 0 kb/s
+</span><span class='line'>  Program 25664
+</span><span class='line'>  Program 25728
+</span><span class='line'>  Program 25792
+</span><span class='line'>  Program 25856
+</span><span class='line'>  Program 25920
+</span><span class='line'>  Program 26240
+</span><span class='line'>  Program 26368
+</span><span class='line'>  Program 26560
+</span><span class='line'>  Program 27136
+</span><span class='line'>  Program 27168
+</span><span class='line'>  Program 27360
+</span><span class='line'>  Program 27456
+</span><span class='line'>  Program 27520
+</span><span class='line'>  Program 27584
+</span><span class='line'>  Program 27648
+</span><span class='line'>  Program 27680
+</span><span class='line'>  Program 27712
+</span><span class='line'>  Program 27744
+</span><span class='line'>  Program 27840
+</span><span class='line'>  Program 27872
+</span><span class='line'>  Program 27904
+</span><span class='line'>  Program 28032
+</span><span class='line'>  Program 28096
+</span><span class='line'>  Program 28160
+</span><span class='line'>    Stream #0.0[0x641](eng): Audio: mp2, 48000 Hz, mono, s16, 64 kb/s
+</span><span class='line'>    Stream #0.1[0x642]: Data: [11][0][0][0] / 0x000B
+</span><span class='line'>  Program 28288
+</span><span class='line'>  Program 28320
+</span><span class='line'>  Program 28352
+</span><span class='line'>  Program 28384
+</span><span class='line'>  Program 28416
+</span><span class='line'>  Program 28480
+</span><span class='line'>  Program 28512
+</span><span class='line'>Output #0, mp3, to 'demo.mp3':
+</span><span class='line'>  Metadata:
+</span><span class='line'>    TSSE            : Lavf53.21.1
+</span><span class='line'>    Stream #0.0(eng): Audio: mp2, 48000 Hz, mono, 64 kb/s
+</span><span class='line'>Stream mapping:
+</span><span class='line'>  Stream #0.0 -&gt; #0.0
+</span><span class='line'>Press ctrl-c to stop encoding
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 15 got 3
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 5 got 9
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 11 got 15
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 1 got 5
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 0 expected 10 got 11
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1601 expected 9 got 6
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 3 got 13
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 14 got 1
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1602 expected 12 got 10
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 16 expected 11 got 5
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 7 got 13
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 15 got 3
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 5 got 9
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 11 got 15
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 1 got 5
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 9 got 7
+</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1601 expected 13 got 2
+</span><span class='line'>size=     865kB time=110.69 bitrate=  64.0kbits/s
+</span><span class='line'>video:0kB audio:865kB global headers:0kB muxing overhead 0.014569%
+</span><span class='line'>bramante@matrix:~/test/audio$ ll
+</span><span class='line'>total 11460
+</span><span class='line'>drwxrwxr-x 2 bramante bramante     4096 Aug 24 17:53 ./
+</span><span class='line'>drwxrwxr-x 4 bramante bramante     4096 Aug 24 17:51 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante   885585 Aug 24 17:53 demo.mp3
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 10834252 Aug 24 17:25 demo.ts*
+</span><span class='line'>bramante@matrix:~/test/audio$ mediainfo demo.mp3
+</span><span class='line'>General
+</span><span class='line'>Complete name                            : demo.mp3
+</span><span class='line'>Format                                   : MPEG Audio
+</span><span class='line'>File size                                : 865 KiB
+</span><span class='line'>Duration                                 : 1mn 50s
+</span><span class='line'>Overall bit rate mode                    : Constant
+</span><span class='line'>Overall bit rate                         : 64.0 Kbps
+</span><span class='line'>Encoding settings                        : Lavf53.21.1
+</span><span class='line'>
+</span><span class='line'>Audio
+</span><span class='line'>Format                                   : MPEG Audio
+</span><span class='line'>Format version                           : Version 1
+</span><span class='line'>Format profile                           : Layer 2
+</span><span class='line'>Duration                                 : 1mn 50s
+</span><span class='line'>Bit rate mode                            : Constant
+</span><span class='line'>Bit rate                                 : 64.0 Kbps
+</span><span class='line'>Channel(s)                               : 1 channel
+</span><span class='line'>Sampling rate                            : 48.0 KHz
+</span><span class='line'>Compression mode                         : Lossy
+</span><span class='line'>Stream size                              : 864 KiB (100%)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>bramante@matrix:~/test/audio$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+</div>
+
+
+
+
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-26T00:02:31+08:00" pubdate data-updated="true"></time> - 
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    
+      <a class="pull-left" href="/blog/2015/08/20/demangle-c-plus-plus-symbols/" title="Previous Post: Demangle C++ Symbols">&laquo; Demangle C++ Symbols</a>
+    
+    
+  </footer>
+
+</div>
+
+          
+            <div class="article-format">
+              <h1>Comments</h1>
+              <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            </div>
+          
+        </article>
+      </div>
+    </div>
+  </div>
+  <div id="footer-widgets">
+  <div class="container">
+    <div class="row">
+  <div class="span3">
+    
+
+  </div>
+  <div class="span3">
+    <h2>recent posts</h2>
+    <ul class="recent_posts">
+      
+        <li>
+          <a href="/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/">Extract Audio From a Video Using FFmpeg</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/20/demangle-c-plus-plus-symbols/">Demangle C++ Symbols</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/19/gdb-debugging-skills-6/">GDB Debugging Skills (6)</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/18/gdb-debugging-skills-5/">GDB Debugging Skills (5)</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/08/14/gdb-debugging-skills-4/">GDB Debugging Skills (4)</a>
+        </li>
+      
+    </ul>
+    <h2><a href="/blog/archives">archives</a></h2>
+  </div>
+  <div class="span4">
+    
+
+  </div>
+  <div class="span6">    
+    <h2>flag counter</h2>  
+<a href="http://info.flagcounter.com/83y3"><img src="http://s09.flagcounter.com/count2/83y3/bg_FFFFFF/txt_000000/border_CCCCCC/columns_3/maxflags_12/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" align="left" alt="Flag Counter" border="0"></a>
+
+ 
+
+
+
+  </div>
+</div>
+
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-left">
+  <a href="/">Bramante&#x27;s Blog</a>
+  - Copyright &copy; 2015 - Bramante
+</p>
+<p class="pull-right">
+  <span>Powered by <a href="http://octopress.org/">Octopress</a>.</span>
+  
+    <span>Designed by <a href="http://www.AdrianArtiles.com">Adrian Artiles</a>.</span>
+  
+</p>
+
+  </div>
+</footer>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/libs/jquery-1.7.2.min.js" type="text/javascript"><\/script>')</script>
+<script src="/javascripts/libs/bootstrap.min.js" type="text/javascript"></script>
+<script src="/javascripts/jquery.tweet.js" type="text/javascript"></script>
+<script src="/javascripts/jquery.instagram.js" type="text/javascript"></script>
+<script src="/javascripts/libs/jquery.masonry.min.js" type="text/javascript"></script>
+<script src="/javascripts/custom.js" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'bramantesblog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F26%2Fextract-audio-from-a-video-using-ffmpeg%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F26%2Fextract-audio-from-a-video-using-ffmpeg%2F';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+</body>
+</html>

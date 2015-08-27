@@ -1,0 +1,63 @@
+---
+layout: post
+title: "lsof"
+date: 2015-08-27 23:18:13 +0800
+comments: true
+categories: 
+---
+
+lsof是個相當實用的command,
+可以用它來查出是哪支程式在access file.
+
+以下是用lsof找出是哪支程式正在access test.c這個file的範例:
+
+``` c test.c
+	#include <stdio.h>
+	#include <time.h>
+
+	int main(int argc, char *argv[])
+	{
+	 if( argc == 2 )
+	   {
+	    FILE *fh = fopen(argv[1],  "rb");
+	    if(fh)
+	     {
+	      while(1)
+	           {
+	            sleep(1);
+	           }
+	      fclose(fh);
+	     }
+	   }
+	 return 0 ;
+	}
+```
+
+編譯與執行:
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~/test$ ll
+	total 12
+	drwxrwxr-x 2 bramante bramante 4096 Aug 27 23:23 ./
+	drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
+	-rw-rw-r-- 1 bramante bramante  264 Aug 27 23:23 test.c
+	bramante@matrix:~/test$ gcc -o ./test ./test.c
+	bramante@matrix:~/test$ ./test ./test.c &
+	[1] 2874
+	bramante@matrix:~/test$ lsof | grep test.c
+	test      2874   bramante    3r      REG  252,0      264 259119 /home/bramante/test/test.c
+	bramante@matrix:~/test$ kill -9 2874
+	[1]+  Killed                  ./test ./test.c
+	bramante@matrix:~/test$ lsof | grep test.c
+	bramante@matrix:~/test$
+```
+</font>
+
+lsof可以找出是test這支程式在access test.c這個file,
+砍掉test這支程式之後,
+lsof也能反應出已經沒有程式在access test.c這個file的變化.
+
+Android系統因為有程式在access USB Disk上的檔案而無法Eject Disk時,
+該怎麼辦? 這時可以用"lsof | grep sda1", 來找出正在access USB Disk的process,
+然後用"kill -9 PID"把這些process給砍掉, 接下來就可以順利Eject Disk了.

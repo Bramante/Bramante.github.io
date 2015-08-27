@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-08-27T23:54:39+08:00</updated>
+  <updated>2015-08-28T00:31:16+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,164 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[nohup]]></title>
+    <link href="http://Bramante.github.io/blog/2015/08/27/nohup/"/>
+    <updated>2015-08-27T23:58:20+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/08/27/nohup</id>
+    <content type="html"><![CDATA[<p>Build Android的source code很花時間,
+如果能利用下班時間來build code是不錯的選擇,
+但是下班後Terminal必需保持與Server的連線才能build code嗎?
+其實不用, 只要使用nohup這個command在背景執行build code script就可以了.</p>
+
+<p>示範用的script:</p>
+
+<figure class='code'><figcaption><span>test.sh</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">i</span><span class="o">=</span>0
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="o">[</span> <span class="nv">$i</span> -lt <span class="m">50</span> <span class="o">]</span>
+</span><span class='line'><span class="k">do</span>
+</span><span class='line'>  <span class="nb">echo</span> <span class="s2">&quot;Do something.... $i&quot;</span>
+</span><span class='line'>  <span class="nv">i</span><span class="o">=</span><span class="k">$(</span> expr <span class="nv">$i</span> + <span class="m">1</span> <span class="k">)</span>
+</span><span class='line'>  sleep 1
+</span><span class='line'><span class="k">done</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;done.&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用nohup在背景執行test.sh, 然後登出Server:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 12
+</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 28 00:16 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  121 Aug 28 00:10 test.sh
+</span><span class='line'>bramante@matrix:~/test$ chmod a+x test.sh
+</span><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 12
+</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 28 00:16 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante  121 Aug 28 00:10 test.sh*
+</span><span class='line'>bramante@matrix:~/test$ nohup ./test.sh &
+</span><span class='line'>[1] 3214
+</span><span class='line'>bramante@matrix:~/test$ nohup: ignoring input and appending output to `nohup.out'
+</span><span class='line'>
+</span><span class='line'>bramante@matrix:~/test$ exit</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>之後再次登入Server時, 可以用&#8221;tail -f ./nohup.out&#8221;查看build code log,
+看看是否有執行到&#8221;done&#8221;, 把script完整的跑完:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ cd test/
+</span><span class='line'>bramante@matrix:~/test$ tail -f ./nohup.out
+</span><span class='line'>Do something.... 22
+</span><span class='line'>Do something.... 23
+</span><span class='line'>Do something.... 24
+</span><span class='line'>Do something.... 25
+</span><span class='line'>Do something.... 26
+</span><span class='line'>Do something.... 27
+</span><span class='line'>Do something.... 28
+</span><span class='line'>Do something.... 29
+</span><span class='line'>Do something.... 30
+</span><span class='line'>Do something.... 31
+</span><span class='line'>Do something.... 32
+</span><span class='line'>Do something.... 33
+</span><span class='line'>Do something.... 34
+</span><span class='line'>Do something.... 35
+</span><span class='line'>Do something.... 36
+</span><span class='line'>Do something.... 37
+</span><span class='line'>Do something.... 38
+</span><span class='line'>Do something.... 39
+</span><span class='line'>Do something.... 40
+</span><span class='line'>Do something.... 41
+</span><span class='line'>Do something.... 42
+</span><span class='line'>Do something.... 43
+</span><span class='line'>Do something.... 44
+</span><span class='line'>Do something.... 45
+</span><span class='line'>Do something.... 46
+</span><span class='line'>Do something.... 47
+</span><span class='line'>Do something.... 48
+</span><span class='line'>Do something.... 49
+</span><span class='line'>done.
+</span><span class='line'>^C
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>有看到&#8221;done&#8221;, test.sh最後有完整的跑完.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[lsof]]></title>
@@ -4042,124 +4200,6 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Array[0]]]></title>
-    <link href="http://Bramante.github.io/blog/2015/07/29/array-0/"/>
-    <updated>2015-07-29T00:10:09+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/07/29/array-0</id>
-    <content type="html"><![CDATA[<p>我在用C/C++實作Query API的時候, 喜歡使用array[0]的技巧, 使用這個技巧有2個好處:</p>
-
-<ol>
-<li>動態決定array size, 所以存放record的array不會有record過多而裝不下的困擾, 也不會發生record太少而浪費array空間的問題出現.</li>
-<li>Query到資訊是存放在透過malloc()取得的1個memory chunk上, 因此要歸還memory時, 只需直接free()它即可, 不需要為每個Query API都實作一個相對應的歸還memory的API.</li>
-</ol>
-
-
-<p>以下是使用array[0]技巧的程式範例:</p>
-
-<figure class='code'><figcaption><span>array.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">struct</span> <span class="n">PERSON_RECORD</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kt">char</span> <span class="n">name</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span>  <span class="n">age</span> <span class="p">;</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">PERSON_RECORD</span> <span class="n">PERSON_RECORD</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">struct</span> <span class="n">FAMILY_INFO</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">recordNum</span> <span class="p">;</span>
-</span><span class='line'>  <span class="n">PERSON_RECORD</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">;</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">FAMILY_INFO</span> <span class="n">FAMILY_INFO</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="nf">GetFamilyInfo</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="kt">int</span> <span class="n">structSize</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">FAMILY_INFO</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PERSON_RECORD</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="n">pInfo</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">structSize</span><span class="p">);</span>
-</span><span class='line'> <span class="n">memset</span><span class="p">(</span> <span class="n">pInfo</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="n">structSize</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">recordNum</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">strncpy</span><span class="p">(</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;Michael&quot;</span><span class="p">,</span> <span class="mi">32</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">age</span> <span class="o">=</span> <span class="mi">10</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">strncpy</span><span class="p">(</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;Bill&quot;</span><span class="p">,</span> <span class="mi">32</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">age</span> <span class="o">=</span> <span class="mi">15</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">return</span> <span class="n">pInfo</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="n">pInfo</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">pInfo</span> <span class="o">=</span> <span class="n">GetFamilyInfo</span><span class="p">();</span>
-</span><span class='line'> <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">recordNum</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>     <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[%d] name: %s age: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">age</span> <span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'> <span class="n">free</span><span class="p">(</span><span class="n">pInfo</span><span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/array$ gcc -o array array.c
-</span><span class='line'>bramante@matrix:~/array$ ./array
-</span><span class='line'>[1] name: Michael age: 10
-</span><span class='line'>[2] name: Bill age: 15
-</span><span class='line'>bramante@matrix:~/array$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>印象中, array[0]這招是我在讀BSD的malloc()演算法時所學到的技巧.</p>
 ]]></content>
   </entry>
   

@@ -1,0 +1,95 @@
+---
+layout: post
+title: "nohup"
+date: 2015-08-27 23:58:20 +0800
+comments: true
+categories: 
+---
+
+Build Android的source code很花時間, 
+如果能利用下班時間來build code是不錯的選擇, 
+但是下班後Terminal必需保持與Server的連線才能build code嗎? 
+其實不用, 只要使用nohup這個command在背景執行build code script就可以了.
+
+示範用的script:
+
+``` bash test.sh
+	#!/bin/bash
+	
+	i=0
+	
+	while [ $i -lt 50 ]
+	do
+	  echo "Do something.... $i"
+	  i=$( expr $i + 1 )
+	  sleep 1
+	done
+	
+	echo "done."
+```
+
+用nohup在背景執行test.sh, 然後登出Server:
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~/test$ ll
+	total 12
+	drwxrwxr-x 2 bramante bramante 4096 Aug 28 00:16 ./
+	drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
+	-rw-rw-r-- 1 bramante bramante  121 Aug 28 00:10 test.sh
+	bramante@matrix:~/test$ chmod a+x test.sh
+	bramante@matrix:~/test$ ll
+	total 12
+	drwxrwxr-x 2 bramante bramante 4096 Aug 28 00:16 ./
+	drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
+	-rwxrwxr-x 1 bramante bramante  121 Aug 28 00:10 test.sh*
+	bramante@matrix:~/test$ nohup ./test.sh &
+	[1] 3214
+	bramante@matrix:~/test$ nohup: ignoring input and appending output to `nohup.out'
+	
+	bramante@matrix:~/test$ exit
+```
+</font>
+
+之後再次登入Server時, 可以用"tail -f ./nohup.out"查看build code log, 
+看看是否有執行到"done", 把script完整的跑完:
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~$ cd test/
+	bramante@matrix:~/test$ tail -f ./nohup.out
+	Do something.... 22
+	Do something.... 23
+	Do something.... 24
+	Do something.... 25
+	Do something.... 26
+	Do something.... 27
+	Do something.... 28
+	Do something.... 29
+	Do something.... 30
+	Do something.... 31
+	Do something.... 32
+	Do something.... 33
+	Do something.... 34
+	Do something.... 35
+	Do something.... 36
+	Do something.... 37
+	Do something.... 38
+	Do something.... 39
+	Do something.... 40
+	Do something.... 41
+	Do something.... 42
+	Do something.... 43
+	Do something.... 44
+	Do something.... 45
+	Do something.... 46
+	Do something.... 47
+	Do something.... 48
+	Do something.... 49
+	done.
+	^C
+	bramante@matrix:~/test$
+```
+</font>
+
+有看到"done", test.sh最後有完整的跑完.

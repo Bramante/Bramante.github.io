@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-08-27T00:39:07+08:00</updated>
+  <updated>2015-08-27T23:54:39+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,103 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[lsof]]></title>
+    <link href="http://Bramante.github.io/blog/2015/08/27/lsof/"/>
+    <updated>2015-08-27T23:18:13+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/08/27/lsof</id>
+    <content type="html"><![CDATA[<p>lsof是個相當實用的command,
+可以用它來查出是哪支程式在access file.</p>
+
+<p>以下是用lsof找出是哪支程式正在access test.c這個file的範例:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span> <span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fh</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="s">&quot;rb&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">{</span>
+</span><span class='line'>      <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>           <span class="p">{</span>
+</span><span class='line'>            <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>           <span class="p">}</span>
+</span><span class='line'>      <span class="n">fclose</span><span class="p">(</span><span class="n">fh</span><span class="p">);</span>
+</span><span class='line'>     <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 12
+</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 27 23:23 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  264 Aug 27 23:23 test.c
+</span><span class='line'>bramante@matrix:~/test$ gcc -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ ./test ./test.c &
+</span><span class='line'>[1] 2874
+</span><span class='line'>bramante@matrix:~/test$ lsof | grep test.c
+</span><span class='line'>test      2874   bramante    3r      REG  252,0      264 259119 /home/bramante/test/test.c
+</span><span class='line'>bramante@matrix:~/test$ kill -9 2874
+</span><span class='line'>[1]+  Killed                  ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ lsof | grep test.c
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>lsof可以找出是test這支程式在access test.c這個file,
+砍掉test這支程式之後,
+lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
+
+<p>Android系統因為有程式在access USB Disk上的檔案而無法Eject Disk時,
+該怎麼辦? 這時可以用&#8221;lsof | grep sda1&#8221;, 來找出正在access USB Disk的process,
+然後用&#8221;kill -9 PID&#8221;把這些process給砍掉, 接下來就可以順利Eject Disk了.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HTTP Redirect]]></title>
@@ -4063,25 +4160,6 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
 <p></font></p>
 
 <p>印象中, array[0]這招是我在讀BSD的malloc()演算法時所學到的技巧.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Create video with audio and still image]]></title>
-    <link href="http://Bramante.github.io/blog/2015/07/28/create-video-with-audio-and-still-image/"/>
-    <updated>2015-07-28T09:40:15+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/07/28/create-video-with-audio-and-still-image</id>
-    <content type="html"><![CDATA[<p>FFmpeg可以把一個jpeg file的image, 轉成靜態畫面的video file, 並配上聲音, 此外bitrate還可以設得很低.</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/video$ ffmpeg -loop 1 -i photo.jpg -i free.mp3 -vcodec mpeg4 -acodec aac -strict experimental -s 640x480 -pix_fmt yuv420p -vb 16k -r 1 -ab 64k -shortest -f mpegts demo.ts</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>免費配樂可以到YouTube Audio Library去找, 就我的理解, 應該可以免費使用, 而且不限定是製做YouTube Video.</p>
 ]]></content>
   </entry>
   

@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>HTTP Redirect - Bramante&#x27;s Blog</title>
+  <title>lsof - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,12 +13,27 @@
   
     
   
-  <meta name="description" content="我的NAS之前改成NAS裡的每個帳號都可以有自己的web page之後,
-就一直沒特別去處理NAS的home page,
-以至於連到home page時,
-畫面上什麼也沒有,
-目前索性把它redirect到github pages的blog,
-修改方法很簡單, 只要把. &hellip;">
+  <meta name="description" content="lsof是個相當實用的command,
+可以用它來查出是哪支程式在access file. 以下是用lsof找出是哪支程式正在access test.c這個file的範例: test.c1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+# &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -26,22 +41,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/27/http-redirect/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/27/lsof/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="HTTP Redirect" />
-  <meta name="og:description" content="我的NAS之前改成NAS裡的每個帳號都可以有自己的web page之後,
-就一直沒特別去處理NAS的home page,
-以至於連到home page時,
-畫面上什麼也沒有,
-目前索性把它redirect到github pages的blog,
-修改方法很簡單, 只要把. &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/27/http-redirect/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/08/27/http-redirect/">
+  <meta name="og:title" content="lsof" />
+  <meta name="og:description" content="lsof是個相當實用的command,
+可以用它來查出是哪支程式在access file. 以下是用lsof找出是哪支程式正在access test.c這個file的範例: test.c1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+# &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/27/lsof/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/08/27/lsof/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -88,7 +118,7 @@
   <header>
     
       
-        <h1 class="entry-title">HTTP Redirect</h1>
+        <h1 class="entry-title">Lsof</h1>
       
     
     
@@ -114,7 +144,7 @@
   
 
 
-<time datetime="2015-08-27T00:23:32+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-27T23:18:13+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -126,12 +156,53 @@
   </header>
 
 
-  <div class="entry-content"><p>我的NAS之前改成NAS裡的每個帳號都可以有自己的web page之後,
-就一直沒特別去處理NAS的home page,
-以至於連到home page時,
-畫面上什麼也沒有,
-目前索性把它redirect到github pages的blog,
-修改方法很簡單, 只要把.htaccess修改如下就可以了:</p>
+  <div class="entry-content"><p>lsof是個相當實用的command,
+可以用它來查出是哪支程式在access file.</p>
+
+<p>以下是用lsof找出是哪支程式正在access test.c這個file的範例:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span> <span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fh</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="s">&quot;rb&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">{</span>
+</span><span class='line'>      <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>           <span class="p">{</span>
+</span><span class='line'>            <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>           <span class="p">}</span>
+</span><span class='line'>      <span class="n">fclose</span><span class="p">(</span><span class="n">fh</span><span class="p">);</span>
+</span><span class='line'>     <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
 
 <p><font face="sans"></p>
 
@@ -143,17 +214,37 @@
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>DiskStation&gt; cat /volume1/web/.htaccess
-</span><span class='line'>
-</span><span class='line'># BEGIN WordPress
-</span><span class='line'>RewriteEngine On
-</span><span class='line'>RewriteCond %{HTTPS} off
-</span><span class='line'>RewriteRule index.htm https://bramante.github.io/
-</span><span class='line'># END WordPress
-</span><span class='line'>DiskStation&gt;</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
+</span><span class='line'>total 12
+</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 27 23:23 ./
+</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  264 Aug 27 23:23 test.c
+</span><span class='line'>bramante@matrix:~/test$ gcc -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ ./test ./test.c &
+</span><span class='line'>[1] 2874
+</span><span class='line'>bramante@matrix:~/test$ lsof | grep test.c
+</span><span class='line'>test      2874   bramante    3r      REG  252,0      264 259119 /home/bramante/test/test.c
+</span><span class='line'>bramante@matrix:~/test$ kill -9 2874
+</span><span class='line'>[1]+  Killed                  ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ lsof | grep test.c
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>
+
+<p>lsof可以找出是test這支程式在access test.c這個file,
+砍掉test這支程式之後,
+lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
+
+<p>Android系統因為有程式在access USB Disk上的檔案而無法Eject Disk時,
+該怎麼辦? 這時可以用&#8221;lsof | grep sda1&#8221;, 來找出正在access USB Disk的process,
+然後用&#8221;kill -9 PID&#8221;把這些process給砍掉, 接下來就可以順利Eject Disk了.</p>
 </div>
 
 
@@ -184,7 +275,7 @@
   
 
 
-<time datetime="2015-08-27T00:23:32+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-08-27T23:18:13+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -192,7 +283,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/27/http-redirect/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/27/http-redirect/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/27/lsof/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/27/lsof/" >Tweet</a>
   
   
   
@@ -200,10 +291,8 @@
 
     
     
-      <a class="pull-left" href="/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/" title="Previous Post: Extract Audio From a Video Using FFmpeg">&laquo; Extract Audio From a Video Using FFmpeg</a>
+      <a class="pull-left" href="/blog/2015/08/27/http-redirect/" title="Previous Post: HTTP Redirect">&laquo; HTTP Redirect</a>
     
-    
-      <a class="pull-right" href="/blog/2015/08/27/lsof/" title="Next Post: lsof">lsof &raquo;</a>
     
   </footer>
 
@@ -301,8 +390,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F27%2Fhttp-redirect%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F27%2Fhttp-redirect%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F27%2Flsof%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F27%2Flsof%2F';
         var disqus_script = 'embed.js';
       
     (function () {

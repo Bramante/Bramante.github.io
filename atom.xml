@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-08-28T00:31:16+08:00</updated>
+  <updated>2015-09-02T00:20:15+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,58 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[secure copy]]></title>
+    <link href="http://Bramante.github.io/blog/2015/09/02/secure-copy/"/>
+    <updated>2015-09-02T00:00:46+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/09/02/secure-copy</id>
+    <content type="html"><![CDATA[<p>在2台Linux電腦之間copy檔案, 使用scp command (secure copy, remote file copy program)
+是相當方便的, 以下是使用範例:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal 192.168.1.2</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ ll ./test.bin
+</span><span class='line'>-rwxr--r-- 1 bramante bramante 72087592 Sep  1 15:46 ./test.bin*
+</span><span class='line'>bramante@matrix:~$     
+</span><span class='line'>bramante@matrix:~$ scp ./test.bin minions@192.168.1.3:~/
+</span><span class='line'>The authenticity of host '192.168.1.3 (192.168.1.3)' can't be established.
+</span><span class='line'>ECDSA key fingerprint is a1:3e:45:35:f5:23:e2:f3:56:c8:50:bf:22:05:4b:9b.
+</span><span class='line'>Are you sure you want to continue connecting (yes/no)? yes
+</span><span class='line'>Warning: Permanently added '192.168.1.3' (ECDSA) to the list of known hosts.
+</span><span class='line'>minions@192.168.1.3's password:
+</span><span class='line'>test.bin                                                                                                                100%   69MB  11.5MB/s   00:06
+</span><span class='line'>bramante@matrix:~$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal 192.168.1.3</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>minions@zion:~$ ll ./test.bin
+</span><span class='line'>-rwxr--r-- 1 minions minions 72087592 Sep  1 15:50 ./test.bin*
+</span><span class='line'>minions@zion:~$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>scp也有Windows的版本, 所以在Linux電腦與Windows電腦間copy檔案, 也可以使用scp.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[nohup]]></title>
@@ -4095,111 +4147,6 @@ adb shell svc wifi disable
 </code></pre>
 
 <p>執行command後, setting APK上的UI也會同步反應WIFI的開關狀態.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Builtin Return Address]]></title>
-    <link href="http://Bramante.github.io/blog/2015/07/29/builtin-return-address-n/"/>
-    <updated>2015-07-29T23:43:20+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/07/29/builtin-return-address-n</id>
-    <content type="html"><![CDATA[<p>在debug時, 若想知道是哪裡的code來call了某個API,
-可以把__builtin_return_address(0)的value給印出來,
-然後再透過addr2line查出line number.</p>
-
-<p>下面的範例是追查哪裡的code去call了funcA().</p>
-
-<figure class='code'><figcaption><span>ret.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'>     <span class="mi">1</span>  <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
-</span><span class='line'>     <span class="mi">2</span>
-</span><span class='line'>     <span class="mi">3</span>  <span class="kt">void</span> <span class="n">funcA</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'>     <span class="mi">4</span>  <span class="p">{</span>
-</span><span class='line'>     <span class="mi">5</span>   <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ret:0x%08x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
-</span><span class='line'>     <span class="mi">6</span>  <span class="p">}</span>
-</span><span class='line'>     <span class="mi">7</span>
-</span><span class='line'>     <span class="mi">8</span>  <span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'>     <span class="mi">9</span>  <span class="p">{</span>
-</span><span class='line'>    <span class="mi">10</span>   <span class="n">funcA</span><span class="p">();</span>
-</span><span class='line'>    <span class="mi">11</span>   <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'>    <span class="mi">12</span>  <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ret ret.c
-</span><span class='line'>bramante@matrix:~/test$ ./ret
-</span><span class='line'>ret:0x0040051f
-</span><span class='line'>bramante@matrix:~/test$ addr2line -Cfe ./ret 40051f
-</span><span class='line'>main
-</span><span class='line'>/home/bramante/test/ret.c:11
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>addr2line查到的line number是執行完該API後的下一行,
-如果想得到call API的那行的line number,
-可以把address減1之後再查line number.</p>
-
-<p>例如, 0x40051f - 1 = 0x40051e, 然後查0x40051e的line number.</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ addr2line -Cfe ./ret 40051e
-</span><span class='line'>main
-</span><span class='line'>/home/bramante/test/ret.c:10
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>x86對 __builtin_return_address(n)的支援相當完整,
-幾乎可以當成backtrace()來用,
-MIPS和ARM對 __builtin_return_address()的支援則相當有限,
-只支援了 __builtin_return_address(0),
-而且還必需在API內的第一行就取值,
-不然有可能會出錯.</p>
-
-<p>在MIPS或ARM上, __builtin_return_address(0)要放在funcA()開頭的第一行,
-才能確保得到的return address的value是正確的.</p>
-
-<figure class='code'><figcaption><span>funcA()</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">funcA</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span> <span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">;</span><span class="c1">//必須在API開頭的第一行就取值</span>
-</span><span class='line'> <span class="p">....</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ret:0x%08x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">ret</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
 ]]></content>
   </entry>
   

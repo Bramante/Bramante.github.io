@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-09-02T00:20:15+08:00</updated>
+  <updated>2015-09-03T00:07:24+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,109 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Download the source code of the Ginga]]></title>
+    <link href="http://Bramante.github.io/blog/2015/09/03/download-the-source-code-of-the-ginga/"/>
+    <updated>2015-09-03T00:01:01+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/09/03/download-the-source-code-of-the-ginga</id>
+    <content type="html"><![CDATA[<p>Ginga是巴西DTV上的Middleware, 它的source code是open source的, 可以用下面的command把source code給抓回來:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ git clone http://git.telemidia.puc-rio.br/ginga.git
+</span><span class='line'>Cloning into 'ginga'...
+</span><span class='line'>bramante@matrix:~$ cd ginga/
+</span><span class='line'>bramante@matrix:~/ginga$ ll
+</span><span class='line'>total 184
+</span><span class='line'>drwxr-xr-x 25 bramante bramante  4096 Sep  2 23:52 ./
+</span><span class='line'>drwxr-xr-x  6 bramante bramante  4096 Sep  2 23:36 ../
+</span><span class='line'>-rw-rw-r--  1 bramante bramante    96 Sep  2 23:52 AUTHORS
+</span><span class='line'>-rwxrwxr-x  1 bramante bramante   292 Sep  2 23:52 bootstrap*
+</span><span class='line'>drwxrwxr-x  2 bramante bramante  4096 Sep  2 23:52 build-aux/
+</span><span class='line'>-rw-rw-r--  1 bramante bramante     0 Sep  2 23:52 ChangeLog
+</span><span class='line'>drwxrwxr-x  2 bramante bramante  4096 Sep  2 23:52 config/
+</span><span class='line'>-rw-rw-r--  1 bramante bramante 17007 Sep  2 23:52 configure.ac
+</span><span class='line'>drwxrwxr-x  2 bramante bramante  4096 Sep  2 23:52 contrib/
+</span><span class='line'>-rw-rw-r--  1 bramante bramante 18009 Sep  2 23:52 COPYING
+</span><span class='line'>drwxrwxr-x  4 bramante bramante  4096 Sep  2 23:52 debian/
+</span><span class='line'>drwxrwxr-x  3 bramante bramante  4096 Sep  2 23:52 ginga/
+</span><span class='line'>drwxrwxr-x  6 bramante bramante  4096 Sep  2 23:52 gingacc-cm/
+</span><span class='line'>drwxrwxr-x  6 bramante bramante  4096 Sep  2 23:52 gingacc-contextmanager/
+</span><span class='line'>drwxrwxr-x  5 bramante bramante  4096 Sep  2 23:52 gingacc-dataprocessing/
+</span><span class='line'>drwxrwxr-x  5 bramante bramante  4096 Sep  2 23:52 gingacc-ic/
+</span><span class='line'>drwxrwxr-x  6 bramante bramante  4096 Sep  2 23:52 gingacc-mb/
+</span><span class='line'>drwxrwxr-x  5 bramante bramante  4096 Sep  2 23:52 gingacc-multidevice/
+</span><span class='line'>drwxrwxr-x  6 bramante bramante  4096 Sep  2 23:52 gingacc-player/
+</span><span class='line'>drwxrwxr-x  4 bramante bramante  4096 Sep  2 23:52 gingacc-system/
+</span><span class='line'>drwxrwxr-x  5 bramante bramante  4096 Sep  2 23:52 gingacc-tsparser/
+</span><span class='line'>drwxrwxr-x  6 bramante bramante  4096 Sep  2 23:52 gingacc-tuner/
+</span><span class='line'>drwxrwxr-x  5 bramante bramante  4096 Sep  2 23:52 gingacc-um/
+</span><span class='line'>drwxrwxr-x  5 bramante bramante  4096 Sep  2 23:52 gingalssm/
+</span><span class='line'>drwxrwxr-x  6 bramante bramante  4096 Sep  2 23:52 gingancl/
+</span><span class='line'>drwxrwxr-x  6 bramante bramante  4096 Sep  2 23:52 ginga-vs2010-solution/
+</span><span class='line'>drwxrwxr-x  8 bramante bramante  4096 Sep  2 23:52 .git/
+</span><span class='line'>-rw-rw-r--  1 bramante bramante  1406 Sep  2 23:52 .gitignore
+</span><span class='line'>-rw-rw-r--  1 bramante bramante  9152 Sep  2 23:52 LICENSING
+</span><span class='line'>-rw-rw-r--  1 bramante bramante   183 Sep  2 23:52 maint.mk
+</span><span class='line'>-rw-rw-r--  1 bramante bramante  2066 Sep  2 23:52 Makefile.am
+</span><span class='line'>drwxrwxr-x  4 bramante bramante  4096 Sep  2 23:52 ncl30/
+</span><span class='line'>drwxrwxr-x  4 bramante bramante  4096 Sep  2 23:52 ncl30-converter/
+</span><span class='line'>-rw-rw-r--  1 bramante bramante     0 Sep  2 23:52 NEWS
+</span><span class='line'>-rw-rw-r--  1 bramante bramante   233 Sep  2 23:52 README
+</span><span class='line'>-rw-rw-r--  1 bramante bramante  2066 Sep  2 23:52 README.linux
+</span><span class='line'>-rw-rw-r--  1 bramante bramante   188 Sep  2 23:52 README.windows
+</span><span class='line'>drwxrwxr-x  5 bramante bramante  4096 Sep  2 23:52 telemidia-util/
+</span><span class='line'>bramante@matrix:~/ginga$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[secure copy]]></title>
@@ -4132,21 +4235,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
 </code></pre>
 
 <p>這個功能我通常用在寫工作日誌的時候, 這樣可以讓日誌的source code內容看起來比較緊湊.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Turn ON/OFF WIFI via ADB]]></title>
-    <link href="http://Bramante.github.io/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/"/>
-    <updated>2015-07-30T00:29:22+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/07/30/turn-on-slash-off-wifi-via-adb</id>
-    <content type="html"><![CDATA[<p>在Android平台上, 可以透過在command line執行svc command來開關WIFI.</p>
-
-<pre><code>adb shell svc wifi enable
-adb shell svc wifi disable
-</code></pre>
-
-<p>執行command後, setting APK上的UI也會同步反應WIFI的開關狀態.</p>
 ]]></content>
   </entry>
   

@@ -126,6 +126,243 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/08/13/gdb-debugging-skills-3/">GDB Debugging Skills (3)</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-13T00:47:52+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/08/13/gdb-debugging-skills-3/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>在gdb batch mode要怎麼印出每次執行某API的return value, 方法如下.</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">test</span><span class="p">(</span><span class="kt">int</span> <span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;@test(arg:%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">arg</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ gdb --batch --command=gdb.cmds --args ./test 3
+</span><span class='line'>Breakpoint 1 at 0x40058f: file ./test.c, line 7.
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=0) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 0
+</span><span class='line'>@test(arg:0)
+</span><span class='line'>main (argc=2, argv=0x7fffffffe5b8) at ./test.c:20
+</span><span class='line'>20              sleep(1);
+</span><span class='line'>Value returned is $1 = 0
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=1) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 1
+</span><span class='line'>@test(arg:1)
+</span><span class='line'>main (argc=2, argv=0x7fffffffe5b8) at ./test.c:20
+</span><span class='line'>20              sleep(1);
+</span><span class='line'>Value returned is $2 = 1
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, test (arg=2) at ./test.c:7
+</span><span class='line'>7        printf("@test(arg:%d)\n",arg);
+</span><span class='line'>arg = 2
+</span><span class='line'>@test(arg:2)
+</span><span class='line'>main (argc=2, argv=0x7fffffffe5b8) at ./test.c:20
+</span><span class='line'>20              sleep(1);
+</span><span class='line'>Value returned is $3 = 2
+</span><span class='line'>[Inferior 1 (process 2986) exited normally]
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>可以看到test()被執行了3次, 它的return value都被gdb給印了出來.</p>
+
+<p>前面所用到的gdb.cmds檔案的內容如下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>b test
+</span><span class='line'>
+</span><span class='line'>define printFuncInfo
+</span><span class='line'>  info args
+</span><span class='line'>  finish
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>commands 1
+</span><span class='line'>  printFuncInfo
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>run</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>要注意, gdb.cmds的內容不能寫成下面這樣, 不然commands在執行到finish後, 在finish後面的command都不會被執行, 需要寫成像前面那樣, 用個user-defined commands把這些command多包一層, 才能避開這個問題.</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>錯誤的gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>b test
+</span><span class='line'>
+</span><span class='line'>commands 1
+</span><span class='line'>  info args
+</span><span class='line'>  finish
+</span><span class='line'>  continue
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>run</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/08/11/gdb-debugging-skills-2/">GDB Debugging Skills (2)</a></h1>
         
     
@@ -2562,68 +2799,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/">Turn ON/OFF WIFI via ADB</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-07-30T00:29:22+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/07/30/turn-on-slash-off-wifi-via-adb/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在Android平台上, 可以透過在command line執行svc command來開關WIFI.</p>
-
-<pre><code>adb shell svc wifi enable
-adb shell svc wifi disable
-</code></pre>
-
-<p>執行command後, setting APK上的UI也會同步反應WIFI的開關狀態.</p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -2641,6 +2816,10 @@ adb shell svc wifi disable
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/09/03/download-the-source-code-of-the-ginga/">Download the source code of the Ginga</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/02/secure-copy/">secure copy</a>
         </li>
       
@@ -2654,10 +2833,6 @@ adb shell svc wifi disable
       
         <li>
           <a href="/blog/2015/08/27/http-redirect/">HTTP Redirect</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/">Extract Audio From a Video Using FFmpeg</a>
         </li>
       
     </ul>

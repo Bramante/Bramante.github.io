@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-09-04T00:32:56+08:00</updated>
+  <updated>2015-09-04T23:34:16+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,577 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Program Hangs On Exit]]></title>
+    <link href="http://Bramante.github.io/blog/2015/09/04/program-hangs-on-exit/"/>
+    <updated>2015-09-04T23:09:43+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/09/04/program-hangs-on-exit</id>
+    <content type="html"><![CDATA[<p>之前有遇過程式在執行exit()之後, 竟然發生程式hang住, 無法結束執行的狀況.
+這個問題罩因於, 在執行exit()時, 會對C++的static/global Object進行de-init,
+若C++ class的destructor沒有寫好, 例如卡在destructor裡的永久迴圈, 或是發生了dead lock,
+便會造成這個異常的現象, 下面的程式刻意在destructor裡加入永久迴圈,
+故意製造hang住的狀態, 重製這樣的bug:</p>
+
+<figure class='code'><figcaption><span>hang.cpp</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span><span class="o">*</span> <span class="n">ptr</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">PARENT</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">public</span><span class="o">:</span>
+</span><span class='line'>              <span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="o">~</span><span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                     <span class="n">printf</span><span class="p">(</span><span class="s">&quot;block...</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>                     <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="kt">void</span> <span class="n">test</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">printf</span><span class="p">(</span><span class="s">&quot;test()</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">static</span> <span class="n">PARENT</span> <span class="n">parentObj</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">parentObj</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ g++ -o ./hang ./hang.cpp
+</span><span class='line'>bramante@matrix:~/test$ gdb ./hang
+</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
+</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
+</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+</span><span class='line'>This is free software: you are free to change and redistribute it.
+</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+</span><span class='line'>and "show warranty" for details.
+</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
+</span><span class='line'>For bug reporting instructions, please see:
+</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
+</span><span class='line'>Reading symbols from /home/bramante/test/hang...(no debugging symbols found)...done.
+</span><span class='line'>(gdb) run
+</span><span class='line'>Starting program: /home/bramante/test/hang
+</span><span class='line'>test()
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>^C
+</span><span class='line'>Program received signal SIGINT, Interrupt.
+</span><span class='line'>0x00007ffff77db090 in __nanosleep_nocancel () at ../sysdeps/unix/syscall-template.S:82
+</span><span class='line'>82      ../sysdeps/unix/syscall-template.S: No such file or directory.
+</span><span class='line'>(gdb) bt
+</span><span class='line'>#0  0x00007ffff77db090 in __nanosleep_nocancel () at ../sysdeps/unix/syscall-template.S:82
+</span><span class='line'>#1  0x00007ffff77daf4c in __sleep (seconds=0) at ../sysdeps/unix/sysv/linux/sleep.c:138
+</span><span class='line'>#2  0x0000000000400770 in PARENT::~PARENT() ()
+</span><span class='line'>#3  0x00007ffff77575b1 in __run_exit_handlers (status=0, listp=0x7ffff7ad3688, run_list_atexit=true) at exit.c:78
+</span><span class='line'>#4  0x00007ffff7757635 in __GI_exit (status=&lt;optimized out&gt;) at exit.c:100
+</span><span class='line'>#5  0x0000000000400746 in main ()
+</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>從callstack可以看出是main()執行exit()時,
+在class PARENT的destructor發生hang住的狀況.</p>
+
+<p>這個bug, 在glibc的callstack看到的是:</p>
+
+<pre><code>__run_exit_handlers()
+__GI_exit()
+</code></pre>
+
+<p>在bionic libc看到的則是:</p>
+
+<pre><code>__cxa_finalize()
+exit()
+</code></pre>
+
+<p>不同的libc在這部份的實作上, 似乎有點不一樣.</p>
+
+<p>C++的程式在一跑起來時, 會利用__cxa_atexit()去註冊destructor,
+然後在程式結束執行時, 便會去執行這些登記在案的destructor.</p>
+
+<p>work around bug的方法很簡單,
+可以把exit()換成kill(getpid(), SIGKILL),
+或是把exit()換成_exit(), 讓程式刻意不去執行destructor,
+便可以讓hang住不要發生.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Program Crashes On Exit]]></title>
+    <link href="http://Bramante.github.io/blog/2015/09/04/program-crashes-on-exit/"/>
+    <updated>2015-09-04T23:09:08+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/09/04/program-crashes-on-exit</id>
+    <content type="html"><![CDATA[<p>之前有遇過程式在執行exit()之後, 竟然發生crash的狀況.
+這個問題罩因於, 在執行exit()時, 會對C++的static/global Object進行de-init,
+若C++ class的destructor沒有寫好, 就會在執行destructor時發生crash,
+下面的程式故意在destructor裡製造crash, 重製這樣的bug:</p>
+
+<figure class='code'><figcaption><span>crash.cpp</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span><span class="o">*</span> <span class="n">ptr</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">PARENT</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">public</span><span class="o">:</span>
+</span><span class='line'>              <span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="k">if</span><span class="p">(</span><span class="n">ptr</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">{</span>
+</span><span class='line'>                  <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class='line'>                 <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="o">~</span><span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">free</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>
+</span><span class='line'>               <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="mh">0xDEADBEEF</span> <span class="p">;</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="kt">void</span> <span class="n">test</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">printf</span><span class="p">(</span><span class="s">&quot;test()</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">static</span> <span class="n">PARENT</span> <span class="n">parentObj1</span><span class="p">,</span> <span class="n">parentObj2</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">parentObj1</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">parentObj2</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ g++ -o ./crash ./crash.cpp
+</span><span class='line'>bramante@matrix:~/test$ gdb ./crash
+</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
+</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
+</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+</span><span class='line'>This is free software: you are free to change and redistribute it.
+</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+</span><span class='line'>and "show warranty" for details.
+</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
+</span><span class='line'>For bug reporting instructions, please see:
+</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
+</span><span class='line'>Reading symbols from /home/bramante/test/crash...(no debugging symbols found)...done.
+</span><span class='line'>(gdb) run
+</span><span class='line'>Starting program: /home/bramante/test/crash
+</span><span class='line'>test()
+</span><span class='line'>test()
+</span><span class='line'>
+</span><span class='line'>Program received signal SIGSEGV, Segmentation fault.
+</span><span class='line'>__GI___libc_free (mem=0xdeadbeef) at malloc.c:2970
+</span><span class='line'>2970    malloc.c: No such file or directory.
+</span><span class='line'>(gdb) bt
+</span><span class='line'>#0  __GI___libc_free (mem=0xdeadbeef) at malloc.c:2970
+</span><span class='line'>#1  0x0000000000400831 in PARENT::~PARENT() ()
+</span><span class='line'>#2  0x00007ffff77575b1 in __run_exit_handlers (status=0, listp=0x7ffff7ad3688, run_list_atexit=true) at exit.c:78
+</span><span class='line'>#3  0x00007ffff7757635 in __GI_exit (status=&lt;optimized out&gt;) at exit.c:100
+</span><span class='line'>#4  0x00000000004007ea in main ()
+</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>從callstack可以看出是main()執行exit()時,
+在class PARENT的destructor發生crash.
+crash的原因是程式去踩到一個不合法的address 0xDEADBEEF.</p>
+
+<p>這個bug, 在glibc的callstack看到的是:</p>
+
+<pre><code>__run_exit_handlers()
+__GI_exit()
+</code></pre>
+
+<p>在bionic libc看到的則是:</p>
+
+<pre><code>__cxa_finalize()
+exit()
+</code></pre>
+
+<p>不同的libc在這部份的實作上, 似乎有點不一樣.</p>
+
+<p>C++的程式在一跑起來時, 會利用__cxa_atexit()去註冊destructor,
+然後在程式結束執行時, 便會去執行這些登記在案的destructor.</p>
+
+<p>work around bug的方法很簡單, 如果只是單純要程式結束, 並且不想看到crash的log,
+可以把exit()換成kill(getpid(), SIGKILL),
+或是把exit()換成_exit(), 讓程式刻意不去執行destructor,
+便可以讓crash不要發生.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Direct IO]]></title>
+    <link href="http://Bramante.github.io/blog/2015/09/04/direct-io/"/>
+    <updated>2015-09-04T23:02:28+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/09/04/direct-io</id>
+    <content type="html"><![CDATA[<p>Direct IO比一般read/write file的方式來得快,
+但是它有一些Alignment的規則要遵守,
+不然程式會不work, 下面是用Direct IO寫成的一支copy程式:</p>
+
+<figure class='code'><figcaption><span>my_copy.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stddef.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;dirent.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;sys/types.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;sys/stat.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;linux/fcntl.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define BLOCK_SIZE 4096</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">fhInput</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">fhOutput</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">len</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">sum</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="n">BLOCK_SIZE</span><span class="p">]</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">aligned</span> <span class="p">(</span><span class="mi">4096</span><span class="p">)))</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span> <span class="n">argc</span> <span class="o">==</span> <span class="mi">3</span> <span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">fhInput</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">O_RDONLY</span> <span class="o">|</span> <span class="n">O_DIRECT</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">fhOutput</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">O_WRONLY</span> <span class="o">|</span> <span class="n">O_CREAT</span> <span class="o">|</span> <span class="n">O_TRUNC</span> <span class="o">|</span><span class="n">O_DIRECT</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span><span class="p">((</span><span class="n">fhInput</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">fhOutput</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>       <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[Error] open file fail.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>       <span class="k">if</span><span class="p">(</span> <span class="n">fhInput</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">close</span><span class="p">(</span><span class="n">fhInput</span><span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[Error] Can not open %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">if</span><span class="p">(</span> <span class="n">fhOutput</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">close</span><span class="p">(</span><span class="n">fhOutput</span><span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[Error] Can not open %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>       <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>     <span class="k">else</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>       <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'>       <span class="k">do</span><span class="p">{</span>
+</span><span class='line'>          <span class="n">len</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span> <span class="n">fhInput</span><span class="p">,</span> <span class="n">buf</span> <span class="p">,</span> <span class="n">BLOCK_SIZE</span> <span class="p">);</span>
+</span><span class='line'>          <span class="c1">//printf(&quot;len: %d\n&quot;,len);</span>
+</span><span class='line'>          <span class="n">write</span><span class="p">(</span> <span class="n">fhOutput</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">BLOCK_SIZE</span> <span class="p">);</span>
+</span><span class='line'>          <span class="n">sum</span> <span class="o">+=</span> <span class="n">BLOCK_SIZE</span> <span class="p">;</span>
+</span><span class='line'>         <span class="p">}</span><span class="k">while</span><span class="p">(</span><span class="n">len</span> <span class="o">==</span> <span class="n">BLOCK_SIZE</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">if</span><span class="p">(</span> <span class="n">len</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">ftruncate</span><span class="p">(</span> <span class="n">fhOutput</span><span class="p">,</span> <span class="n">sum</span> <span class="o">-</span> <span class="n">BLOCK_SIZE</span> <span class="o">+</span> <span class="n">len</span> <span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">struct</span> <span class="n">stat</span> <span class="n">fileAttr</span> <span class="p">;</span>
+</span><span class='line'>       <span class="n">fstat</span><span class="p">(</span> <span class="n">fhInput</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">fileAttr</span> <span class="p">);</span>
+</span><span class='line'>       <span class="n">fchmod</span><span class="p">(</span> <span class="n">fhOutput</span><span class="p">,</span> <span class="n">fileAttr</span><span class="p">.</span><span class="n">st_mode</span> <span class="p">);</span>
+</span><span class='line'>       <span class="n">close</span><span class="p">(</span><span class="n">fhOutput</span><span class="p">);</span>
+</span><span class='line'>       <span class="n">close</span><span class="p">(</span><span class="n">fhInput</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[help] ./my_copy ./src_file ./dest_file </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -o ./my_copy ./my_copy.c
+</span><span class='line'>bramante@matrix:~/test$ which ls
+</span><span class='line'>/bin/ls
+</span><span class='line'>bramante@matrix:~/test$ ll /bin/ls
+</span><span class='line'>-rwxr-xr-x 1 root root 105840 Nov 20  2012 /bin/ls*
+</span><span class='line'>bramante@matrix:~/test$ ./my_copy /bin/ls ./ls
+</span><span class='line'>bramante@matrix:~/test$ ll | grep ls
+</span><span class='line'>-rwxr-xr-x 1 bramante bramante 105840 Sep  4 11:15 ls*
+</span><span class='line'>bramante@matrix:~/test$ diff ./ls /bin/ls
+</span><span class='line'>bramante@matrix:~/test$
+</span><span class='line'>bramante@matrix:~/test$ ./ls -al | grep ls
+</span><span class='line'>-rwxr-xr-x 1 bramante bramante 105840 Sep  4 11:15 ls
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>Direct IO 所read/write的byte數, 以及read/write的起點,
+還有read()/write()所使用的memory buffer, 應該都要align在512 byte的倍數上,
+精確的alignment限制可以參考網路上的說明:</p>
+
+<p><a href="http://people.redhat.com/msnitzer/docs/io-limits.txt">http://people.redhat.com/msnitzer/docs/io-limits.txt</a></p>
+
+<p>gcc有提供attribute, 讓變數可以align在特定的address上, 我只有試過在全域變數上確實有用, 其他的沒試過:</p>
+
+<pre><code>__attribute__(aligned (4096))
+</code></pre>
+
+<p>因為在這支程式裡, Direct IO一次read/write 4096 byte,
+因此copy出的file會多一截&#8221;尾巴&#8221;, 我用ftruncate()來cut掉它:</p>
+
+<pre><code>ftruncate( fhOutput, sum - BLOCK_SIZE + len );
+</code></pre>
+
+<p>為了讓copy出的file的屬性和原本的file相同, 因此我用fstat()與fchmod()複製了檔案屬性:</p>
+
+<pre><code>fstat( fhInput, &amp;fileAttr );
+fchmod( fhOutput, fileAttr.st_mode );
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[fallocate]]></title>
@@ -3976,349 +4547,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
 
 
 <p></font></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[nanosleep]]></title>
-    <link href="http://Bramante.github.io/blog/2015/08/06/nanosleep/"/>
-    <updated>2015-08-06T00:16:39+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/08/06/nanosleep</id>
-    <content type="html"><![CDATA[<p>在nanosleep()的說明裡, 有提到它可能會被signal handler所打斷.</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>NANOSLEEP(2)                                                         Linux Programmer's Manual                                                         NANOSLEEP(2)
-</span><span class='line'>
-</span><span class='line'>NAME
-</span><span class='line'>       nanosleep - high-resolution sleep
-</span><span class='line'>
-</span><span class='line'>SYNOPSIS
-</span><span class='line'>       #include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'>       int nanosleep(const struct timespec *req, struct timespec *rem);
-</span><span class='line'>
-</span><span class='line'>   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
-</span><span class='line'>
-</span><span class='line'>       nanosleep(): _POSIX_C_SOURCE &gt;= 199309L
-</span><span class='line'>
-</span><span class='line'>DESCRIPTION
-</span><span class='line'>       nanosleep()  suspends  the  execution  of  the calling thread until either at least the time specified in *req has elapsed, or the delivery of a signal that
-</span><span class='line'>       triggers the invocation of a handler in the calling thread or that terminates the process.
-</span><span class='line'>
-</span><span class='line'>       If the call is interrupted by a signal handler, nanosleep() returns -1, sets errno to EINTR, and writes the remaining time into the structure pointed to  by
-</span><span class='line'>       rem unless rem is NULL.  The value of *rem can then be used to call nanosleep() again and complete the specified pause (but see NOTES).
-</span><span class='line'>
-</span><span class='line'>       The structure timespec is used to specify intervals of time with nanosecond precision.  It is defined as follows:
-</span><span class='line'>
-</span><span class='line'>           struct timespec {
-</span><span class='line'>               time_t tv_sec;        /* seconds */
-</span><span class='line'>               long   tv_nsec;       /* nanoseconds */
-</span><span class='line'>           };
-</span><span class='line'>
-</span><span class='line'>       The value of the nanoseconds field must be in the range 0 to 999999999.
-</span><span class='line'>
-</span><span class='line'>       Compared  to  sleep(3)  and  usleep(3), nanosleep() has the following advantages: it provides a higher resolution for specifying the sleep interval; POSIX.1
-</span><span class='line'>       explicitly specifies that it does not interact with signals; and it makes the task of resuming a sleep that has been interrupted by a signal handler easier.
-</span><span class='line'>
-</span><span class='line'>RETURN VALUE
-</span><span class='line'>       On successfully sleeping for the requested interval, nanosleep() returns 0.  If the call is interrupted by a signal handler or encounters an error, then  it
-</span><span class='line'>       returns -1, with errno set to indicate the error.</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>如果沒有考量到nanosleep()被signal handler打斷的狀況, sleep的時間有可能會達不到預期的長度. Random發生沒有sleep到充足時間, 有可能會造成程式發生random的bug, 因此不要小看這個問題.</p>
-
-<figure class='code'><figcaption><span>錯誤的用法</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define MY_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         nanosleep(&amp;delay,NULL) ;\</span>
-</span><span class='line'><span class="cp">        }</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>正確的用法應該如下, 才能確保sleep的時間達到預期的要求.</p>
-
-<figure class='code'><figcaption><span>正確的用法</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define MY_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay, rem ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         while(nanosleep(&amp;delay, &amp;rem) == -1 &amp;&amp; errno == EINTR) delay = rem;\</span>
-</span><span class='line'><span class="cp">        } </span>
-</span></code></pre></td></tr></table></div></figure>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Getting the backtrace for all the threads in GDB]]></title>
-    <link href="http://Bramante.github.io/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb/"/>
-    <updated>2015-08-04T23:57:27+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/08/04/getting-the-backtrace-for-all-the-threads-in-gdb</id>
-    <content type="html"><![CDATA[<p>在嵌入式系統上debug, 有時gdb的運作不是很可靠, 可能會遇到執行幾個指令之後就無法再繼續用的情形, 如果正在處理multi-thread hang住的bug, 那可麻煩了, 可能bt沒幾個thread的callstack, gdb就沒辦法再用了, 這時改用&#8221;thread apply all bt&#8221;是最佳的選擇, 使用一行command就可以把所有thread的callstack都給dump出來.</p>
-
-<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define THREAD_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         nanosleep(&amp;delay,NULL) ;\</span>
-</span><span class='line'><span class="cp">        }</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">pthread_t</span> <span class="n">th1</span> <span class="p">;</span>
-</span><span class='line'><span class="kt">pthread_t</span> <span class="n">th2</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction1(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction2(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">main(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/thread$ gcc -o ./test ./test.c -lpthread
-</span><span class='line'>bramante@matrix:~/thread$ gdb ./test
-</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
-</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
-</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
-</span><span class='line'>This is free software: you are free to change and redistribute it.
-</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-</span><span class='line'>and "show warranty" for details.
-</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
-</span><span class='line'>For bug reporting instructions, please see:
-</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
-</span><span class='line'>Reading symbols from /home/bramante/thread/test...(no debugging symbols found)...done.
-</span><span class='line'>(gdb) run
-</span><span class='line'>Starting program: /home/bramante/thread/test
-</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
-</span><span class='line'>[Thread debugging using libthread_db enabled]
-</span><span class='line'>Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
-</span><span class='line'>
-</span><span class='line'>main(): 140737354028800
-</span><span class='line'>[New Thread 0x7ffff77fe700 (LWP 3052)]
-</span><span class='line'>
-</span><span class='line'>threadFunction1(): 140737345742592
-</span><span class='line'>[New Thread 0x7ffff6ffd700 (LWP 3053)]
-</span><span class='line'>
-</span><span class='line'>threadFunction2(): 140737337349888
-</span><span class='line'>^C
-</span><span class='line'>Program received signal SIGINT, Interrupt.
-</span><span class='line'>0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>(gdb) thread apply all bt
-</span><span class='line'>
-</span><span class='line'>Thread 3 (Thread 0x7ffff6ffd700 (LWP 3053)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x00000000004006da in threadFunction2 ()
-</span><span class='line'>#2  0x00007ffff7bc4e9a in start_thread () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#3  0x00007ffff78f238d in clone () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>#4  0x0000000000000000 in ?? ()
-</span><span class='line'>
-</span><span class='line'>Thread 2 (Thread 0x7ffff77fe700 (LWP 3052)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x000000000040068e in threadFunction1 ()
-</span><span class='line'>#2  0x00007ffff7bc4e9a in start_thread () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#3  0x00007ffff78f238d in clone () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>#4  0x0000000000000000 in ?? ()
-</span><span class='line'>
-</span><span class='line'>Thread 1 (Thread 0x7ffff7fe5700 (LWP 3049)):
-</span><span class='line'>#0  0x00007ffff7bcc52d in nanosleep () from /lib/x86_64-linux-gnu/libpthread.so.0
-</span><span class='line'>#1  0x0000000000400754 in main ()
-</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Kill Process by Name]]></title>
-    <link href="http://Bramante.github.io/blog/2015/07/31/kill-process-by-name/"/>
-    <updated>2015-07-31T00:35:50+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/07/31/kill-process-by-name</id>
-    <content type="html"><![CDATA[<p>在使用busybox的嵌入式系統上, 若因bug導致log狂印, 有時會想砍掉這個狂印log的process, 以便後續能操作console進行debug. 此時由於log處於狂印的狀態, 若使用ps查詢kill所需的pid時, 往往會很難看到想看的內容, 此時若能kill process by name把狂印log的process給砍掉會很方便.</p>
-
-<p>假設要砍掉的process name叫做Application的話, 我都是用下面這樣的一串command來做到kill process by name的:</p>
-
-<pre><code>kill -9 $(/bin/busybox ps -eo pid,comm | grep Application | sed 's/Application//g')
-</code></pre>
 ]]></content>
   </entry>
   

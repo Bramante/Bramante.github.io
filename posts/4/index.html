@@ -126,6 +126,420 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/07/25/determine-cpu-endianness-at-runtime/">Determine CPU Endianness at Runtime</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-25T00:33:49+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/07/25/determine-cpu-endianness-at-runtime/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>之前工作上用的CPU由Big Endian改成了Little Endian,
+同樣的code會在不同Endian的CPU上跑,
+因此寫了段能在runtime偵測Endian的code,
+這樣可以用來偵測程式跑在哪個Chip上.</p>
+
+<figure class='code'><figcaption><span>endianness.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">a</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">ptr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;big endian</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>  
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;little endian</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>   
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/endianness$ gcc -o endianness endianness.c
+</span><span class='line'>bramante@matrix:~/endianness$ ./endianness
+</span><span class='line'>little endian
+</span><span class='line'>bramante@matrix:~/endianness$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/07/23/how-to-backup-an-old-computer/">How to Backup an Old Computer</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-23T23:33:04+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/07/23/how-to-backup-an-old-computer/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>電腦老舊之後, 會買新的電腦取代,
+有些資料很容易從舊電腦搬到新電腦,
+像影音檔之類的檔案, copy是很容易的,
+但是有些像email之類的資料,
+可能會因為email軟體的不同而需要轉檔,
+才能搬到新電腦, 這就很麻煩.
+如果遇到無法轉檔, 或新電腦與舊有軟體存在相容性的問題,
+那該怎麼辦?</p>
+
+<p>有個方法可以解決這個問題,
+就是把舊電腦給虛擬化,
+把它轉成vmware image,
+讓它擺脫老舊的硬體,
+在新電腦裡繼續存活下去,
+這樣還有個好處, 就是不用擔心有資料忘了copy出來,
+因為所有的內容都還在vmware image裡.</p>
+
+<p>Windows可以使用 VMware vCenter Converter 直接把電腦虛擬化,
+Linux則可以使用 MondoRescue, 先把電腦轉換成Rescue Image,
+然後再把Rescue Image &ldquo;還原&#8221;到vmware image上進行虛擬化,
+這2套軟體都是免費的, create vmware image有免費軟體可用,
+vmware player也是免費的, 所以把舊電腦虛擬化是可以不花錢的.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/07/22/ttf2png/">Ttf2png</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-22T00:33:58+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/07/22/ttf2png/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>想要看TTF字型檔裡有哪些字,
+可以利用ttf2png把字型檔的內容dump到png圖檔裡來看.</p>
+
+<p>下載ttf2png的source code:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ mkdir test_ttf2png
+</span><span class='line'>bramante@matrix:~$ cd test_ttf2png/
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ wget http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
+</span><span class='line'>--2015-07-21 12:40:49--  http://sid.ethz.ch/debian/ttf2png/ttf2png-0.3.tar.gz
+</span><span class='line'>Resolving sid.ethz.ch (sid.ethz.ch)... 192.33.97.200
+</span><span class='line'>Connecting to sid.ethz.ch (sid.ethz.ch)|192.33.97.200|:80... connected.
+</span><span class='line'>HTTP request sent, awaiting response... 200 OK
+</span><span class='line'>Length: 11538 (11K) [application/octet-stream]
+</span><span class='line'>Saving to: `ttf2png-0.3.tar.gz'
+</span><span class='line'>
+</span><span class='line'>100%[==============================================================================================================================&gt;] 11,538      --.-K/s   in 0.004s
+</span><span class='line'>
+</span><span class='line'>2015-07-21 12:40:51 (3.13 MB/s) - `ttf2png-0.3.tar.gz' saved [11538/11538]
+</span><span class='line'>
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
+</span><span class='line'>total 20
+</span><span class='line'>drwxrwxr-x  2 bramante bramante  4096 Jul 21 12:40 ./
+</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
+</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
+</span><span class='line'>bramante@matrix:~/test_ttf2png$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>Build出ttf2png:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png$ tar xzf ttf2png-0.3.tar.gz
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ ll
+</span><span class='line'>total 24
+</span><span class='line'>drwxrwxr-x  3 bramante bramante  4096 Jul 21 12:41 ./
+</span><span class='line'>drwxr-xr-x 39 bramante bramante  4096 Jul 21 12:40 ../
+</span><span class='line'>drwxr-xr-x  2 bramante bramante  4096 Nov  3  2008 ttf2png-0.3/
+</span><span class='line'>-rw-rw-r--  1 bramante bramante 11538 Nov  6  2008 ttf2png-0.3.tar.gz
+</span><span class='line'>bramante@matrix:~/test_ttf2png$ cd ttf2png-0.3/
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 52
+</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Nov  3  2008 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ make
+</span><span class='line'>gcc -Wall ttf2png.c -o ttf2png -I/usr/include/freetype2 -L/usr/lib/x86_64-linux-gnu -lfreetype -lz -I/usr/include/libpng12  -lpng12
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 76
+</span><span class='line'>drwxr-xr-x 2 bramante bramante  4096 Jul 21 12:41 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante  4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  1373 Oct 29  2008 Readme
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante 22643 Jul 21 12:41 ttf2png*
+</span><span class='line'>-rw-r--r-- 1 bramante bramante 12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>把Windows 7裡的times.ttf拿來dump一下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 892
+</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:46 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ./ttf2png  -l 11 -s 18 -e -o ./times.png ./times.ttf
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$ ll
+</span><span class='line'>total 904
+</span><span class='line'>drwxr-xr-x 2 bramante bramante   4096 Jul 21 12:47 ./
+</span><span class='line'>drwxrwxr-x 3 bramante bramante   4096 Jul 21 12:41 ../
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  18009 Jul 15  2001 gpl.txt
+</span><span class='line'>-rw-r--r-- 1 bramante bramante    360 Oct 29  2008 Makefile
+</span><span class='line'>-rw-r--r-- 1 bramante bramante   1373 Oct 29  2008 Readme
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante  12206 Jul 21 12:47 times.png
+</span><span class='line'>-rwxrw-rw- 1 bramante bramante 834240 Nov  4  2010 times.ttf*
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante  22643 Jul 21 12:41 ttf2png*
+</span><span class='line'>-rw-r--r-- 1 bramante bramante  12866 Nov  3  2008 ttf2png.c
+</span><span class='line'>bramante@matrix:~/test_ttf2png/ttf2png-0.3$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>得到的times.png如下, 可以看到times.ttf裡有哪些字:</p>
+
+<p><img class="left" src="/images/2015-07-22-ttf2png/times.png" width="512" height="1024" title="times.png" ></p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/07/21/dump-kernel-callstack/">Dump Kernel Callstack</a></h1>
         
     
@@ -311,23 +725,23 @@ Ctrl + break  放開再按  t
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs On Exit</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/04/program-crashes-on-exit/">Program Crashes On Exit</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/04/direct-io/">Direct IO</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/04/fallocate/">fallocate</a>
         </li>
       
         <li>
           <a href="/blog/2015/09/03/download-the-source-code-of-the-ginga/">Download the source code of the Ginga</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/09/02/secure-copy/">secure copy</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/27/nohup/">nohup</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/27/lsof/">lsof</a>
         </li>
       
     </ul>

@@ -126,6 +126,718 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs on Exit</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-04T23:09:43+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/09/04/program-hangs-on-exit/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>之前有遇過程式在執行exit()之後, 竟然發生程式hang住, 無法結束執行的狀況.
+這個問題罩因於, 在執行exit()時, 會對C++的static/global Object進行de-init,
+若C++ class的destructor沒有寫好, 例如卡在destructor裡的永久迴圈, 或是發生了dead lock,
+便會造成這個異常的現象, 下面的程式刻意在destructor裡加入永久迴圈,
+故意製造hang住的狀態, 重製這樣的bug:</p>
+
+<figure class='code'><figcaption><span>hang.cpp</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span><span class="o">*</span> <span class="n">ptr</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">PARENT</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">public</span><span class="o">:</span>
+</span><span class='line'>              <span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="o">~</span><span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                     <span class="n">printf</span><span class="p">(</span><span class="s">&quot;block...</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>                     <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="kt">void</span> <span class="n">test</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">printf</span><span class="p">(</span><span class="s">&quot;test()</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">static</span> <span class="n">PARENT</span> <span class="n">parentObj</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">parentObj</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ g++ -o ./hang ./hang.cpp
+</span><span class='line'>bramante@matrix:~/test$ gdb ./hang
+</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
+</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
+</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+</span><span class='line'>This is free software: you are free to change and redistribute it.
+</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+</span><span class='line'>and "show warranty" for details.
+</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
+</span><span class='line'>For bug reporting instructions, please see:
+</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
+</span><span class='line'>Reading symbols from /home/bramante/test/hang...(no debugging symbols found)...done.
+</span><span class='line'>(gdb) run
+</span><span class='line'>Starting program: /home/bramante/test/hang
+</span><span class='line'>test()
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>block...
+</span><span class='line'>^C
+</span><span class='line'>Program received signal SIGINT, Interrupt.
+</span><span class='line'>0x00007ffff77db090 in __nanosleep_nocancel () at ../sysdeps/unix/syscall-template.S:82
+</span><span class='line'>82      ../sysdeps/unix/syscall-template.S: No such file or directory.
+</span><span class='line'>(gdb) bt
+</span><span class='line'>#0  0x00007ffff77db090 in __nanosleep_nocancel () at ../sysdeps/unix/syscall-template.S:82
+</span><span class='line'>#1  0x00007ffff77daf4c in __sleep (seconds=0) at ../sysdeps/unix/sysv/linux/sleep.c:138
+</span><span class='line'>#2  0x0000000000400770 in PARENT::~PARENT() ()
+</span><span class='line'>#3  0x00007ffff77575b1 in __run_exit_handlers (status=0, listp=0x7ffff7ad3688, run_list_atexit=true) at exit.c:78
+</span><span class='line'>#4  0x00007ffff7757635 in __GI_exit (status=&lt;optimized out&gt;) at exit.c:100
+</span><span class='line'>#5  0x0000000000400746 in main ()
+</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>從callstack可以看出是main()執行exit()時,
+在class PARENT的destructor發生hang住的狀況.</p>
+
+<p>這個bug, 在glibc的callstack看到的是:</p>
+
+<pre><code>__run_exit_handlers()
+__GI_exit()
+</code></pre>
+
+<p>在bionic libc看到的則是:</p>
+
+<pre><code>__cxa_finalize()
+exit()
+</code></pre>
+
+<p>不同的libc在這部份的實作上, 似乎有點不一樣.</p>
+
+<p>C++的程式在一跑起來時, 會利用__cxa_atexit()去註冊destructor,
+然後在程式結束執行時, 便會去執行這些登記在案的destructor.</p>
+
+<p>work around bug的方法很簡單,
+可以把exit()換成kill(getpid(), SIGKILL),
+或是把exit()換成_exit(), 讓程式刻意不去執行destructor,
+便可以讓hang住不要發生.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/09/04/program-crashes-on-exit/">Program Crashes on Exit</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-04T23:09:08+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/09/04/program-crashes-on-exit/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>之前有遇過程式在執行exit()之後, 竟然發生crash的狀況.
+這個問題罩因於, 在執行exit()時, 會對C++的static/global Object進行de-init,
+若C++ class的destructor沒有寫好, 就會在執行destructor時發生crash,
+下面的程式故意在destructor裡製造crash, 重製這樣的bug:</p>
+
+<figure class='code'><figcaption><span>crash.cpp</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span><span class="o">*</span> <span class="n">ptr</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">PARENT</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">public</span><span class="o">:</span>
+</span><span class='line'>              <span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="k">if</span><span class="p">(</span><span class="n">ptr</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">{</span>
+</span><span class='line'>                  <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class='line'>                 <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="o">~</span><span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">free</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>
+</span><span class='line'>               <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="mh">0xDEADBEEF</span> <span class="p">;</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="kt">void</span> <span class="n">test</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">printf</span><span class="p">(</span><span class="s">&quot;test()</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">static</span> <span class="n">PARENT</span> <span class="n">parentObj1</span><span class="p">,</span> <span class="n">parentObj2</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">parentObj1</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">parentObj2</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ g++ -o ./crash ./crash.cpp
+</span><span class='line'>bramante@matrix:~/test$ gdb ./crash
+</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
+</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
+</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+</span><span class='line'>This is free software: you are free to change and redistribute it.
+</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+</span><span class='line'>and "show warranty" for details.
+</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
+</span><span class='line'>For bug reporting instructions, please see:
+</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
+</span><span class='line'>Reading symbols from /home/bramante/test/crash...(no debugging symbols found)...done.
+</span><span class='line'>(gdb) run
+</span><span class='line'>Starting program: /home/bramante/test/crash
+</span><span class='line'>test()
+</span><span class='line'>test()
+</span><span class='line'>
+</span><span class='line'>Program received signal SIGSEGV, Segmentation fault.
+</span><span class='line'>__GI___libc_free (mem=0xdeadbeef) at malloc.c:2970
+</span><span class='line'>2970    malloc.c: No such file or directory.
+</span><span class='line'>(gdb) bt
+</span><span class='line'>#0  __GI___libc_free (mem=0xdeadbeef) at malloc.c:2970
+</span><span class='line'>#1  0x0000000000400831 in PARENT::~PARENT() ()
+</span><span class='line'>#2  0x00007ffff77575b1 in __run_exit_handlers (status=0, listp=0x7ffff7ad3688, run_list_atexit=true) at exit.c:78
+</span><span class='line'>#3  0x00007ffff7757635 in __GI_exit (status=&lt;optimized out&gt;) at exit.c:100
+</span><span class='line'>#4  0x00000000004007ea in main ()
+</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>從callstack可以看出是main()執行exit()時,
+在class PARENT的destructor發生crash.
+crash的原因是程式去踩到一個不合法的address 0xDEADBEEF.</p>
+
+<p>這個bug, 在glibc的callstack看到的是:</p>
+
+<pre><code>__run_exit_handlers()
+__GI_exit()
+</code></pre>
+
+<p>在bionic libc看到的則是:</p>
+
+<pre><code>__cxa_finalize()
+exit()
+</code></pre>
+
+<p>不同的libc在這部份的實作上, 似乎有點不一樣.</p>
+
+<p>C++的程式在一跑起來時, 會利用__cxa_atexit()去註冊destructor,
+然後在程式結束執行時, 便會去執行這些登記在案的destructor.</p>
+
+<p>work around bug的方法很簡單, 如果只是單純要程式結束, 並且不想看到crash的log,
+可以把exit()換成kill(getpid(), SIGKILL),
+或是把exit()換成_exit(), 讓程式刻意不去執行destructor,
+便可以讓crash不要發生.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/09/04/direct-io/">Direct IO</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-04T23:02:28+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/09/04/direct-io/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Direct IO比一般read/write file的方式來得快,
+但是它有一些Alignment的規則要遵守,
+不然程式會不work, 下面是用Direct IO寫成的一支copy程式:</p>
+
+<figure class='code'><figcaption><span>my_copy.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stddef.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;dirent.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;sys/types.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;sys/stat.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;linux/fcntl.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define BLOCK_SIZE 4096</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">fhInput</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">fhOutput</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">len</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">sum</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="n">BLOCK_SIZE</span><span class="p">]</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">aligned</span> <span class="p">(</span><span class="mi">4096</span><span class="p">)))</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'> <span class="k">if</span><span class="p">(</span> <span class="n">argc</span> <span class="o">==</span> <span class="mi">3</span> <span class="p">)</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">fhInput</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">O_RDONLY</span> <span class="o">|</span> <span class="n">O_DIRECT</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">fhOutput</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">O_WRONLY</span> <span class="o">|</span> <span class="n">O_CREAT</span> <span class="o">|</span> <span class="n">O_TRUNC</span> <span class="o">|</span><span class="n">O_DIRECT</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span><span class="p">((</span><span class="n">fhInput</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">fhOutput</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>       <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[Error] open file fail.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>       <span class="k">if</span><span class="p">(</span> <span class="n">fhInput</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">close</span><span class="p">(</span><span class="n">fhInput</span><span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[Error] Can not open %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">if</span><span class="p">(</span> <span class="n">fhOutput</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">close</span><span class="p">(</span><span class="n">fhOutput</span><span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[Error] Can not open %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>       <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>     <span class="k">else</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>       <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'>       <span class="k">do</span><span class="p">{</span>
+</span><span class='line'>          <span class="n">len</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span> <span class="n">fhInput</span><span class="p">,</span> <span class="n">buf</span> <span class="p">,</span> <span class="n">BLOCK_SIZE</span> <span class="p">);</span>
+</span><span class='line'>          <span class="c1">//printf(&quot;len: %d\n&quot;,len);</span>
+</span><span class='line'>          <span class="n">write</span><span class="p">(</span> <span class="n">fhOutput</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">BLOCK_SIZE</span> <span class="p">);</span>
+</span><span class='line'>          <span class="n">sum</span> <span class="o">+=</span> <span class="n">BLOCK_SIZE</span> <span class="p">;</span>
+</span><span class='line'>         <span class="p">}</span><span class="k">while</span><span class="p">(</span><span class="n">len</span> <span class="o">==</span> <span class="n">BLOCK_SIZE</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">if</span><span class="p">(</span> <span class="n">len</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>          <span class="n">ftruncate</span><span class="p">(</span> <span class="n">fhOutput</span><span class="p">,</span> <span class="n">sum</span> <span class="o">-</span> <span class="n">BLOCK_SIZE</span> <span class="o">+</span> <span class="n">len</span> <span class="p">);</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">struct</span> <span class="n">stat</span> <span class="n">fileAttr</span> <span class="p">;</span>
+</span><span class='line'>       <span class="n">fstat</span><span class="p">(</span> <span class="n">fhInput</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">fileAttr</span> <span class="p">);</span>
+</span><span class='line'>       <span class="n">fchmod</span><span class="p">(</span> <span class="n">fhOutput</span><span class="p">,</span> <span class="n">fileAttr</span><span class="p">.</span><span class="n">st_mode</span> <span class="p">);</span>
+</span><span class='line'>       <span class="n">close</span><span class="p">(</span><span class="n">fhOutput</span><span class="p">);</span>
+</span><span class='line'>       <span class="n">close</span><span class="p">(</span><span class="n">fhInput</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[help] ./my_copy ./src_file ./dest_file </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -o ./my_copy ./my_copy.c
+</span><span class='line'>bramante@matrix:~/test$ which ls
+</span><span class='line'>/bin/ls
+</span><span class='line'>bramante@matrix:~/test$ ll /bin/ls
+</span><span class='line'>-rwxr-xr-x 1 root root 105840 Nov 20  2012 /bin/ls*
+</span><span class='line'>bramante@matrix:~/test$ ./my_copy /bin/ls ./ls
+</span><span class='line'>bramante@matrix:~/test$ ll | grep ls
+</span><span class='line'>-rwxr-xr-x 1 bramante bramante 105840 Sep  4 11:15 ls*
+</span><span class='line'>bramante@matrix:~/test$ diff ./ls /bin/ls
+</span><span class='line'>bramante@matrix:~/test$
+</span><span class='line'>bramante@matrix:~/test$ ./ls -al | grep ls
+</span><span class='line'>-rwxr-xr-x 1 bramante bramante 105840 Sep  4 11:15 ls
+</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>Direct IO 所read/write的byte數, 以及read/write的起點,
+還有read()/write()所使用的memory buffer, 應該都要align在512 byte的倍數上,
+精確的alignment限制可以參考網路上的說明:</p>
+
+<p><a href="http://people.redhat.com/msnitzer/docs/io-limits.txt">http://people.redhat.com/msnitzer/docs/io-limits.txt</a></p>
+
+<p>gcc有提供attribute, 讓變數可以align在特定的address上, 我只有試過在全域變數上確實有用, 其他的沒試過:</p>
+
+<pre><code>__attribute__(aligned (4096))
+</code></pre>
+
+<p>因為在這支程式裡, Direct IO一次read/write 4096 byte,
+因此copy出的file會多一截&#8221;尾巴&#8221;, 我用ftruncate()來cut掉它:</p>
+
+<pre><code>ftruncate( fhOutput, sum - BLOCK_SIZE + len );
+</code></pre>
+
+<p>為了讓copy出的file的屬性和原本的file相同, 因此我用fstat()與fchmod()複製了檔案屬性:</p>
+
+<pre><code>fstat( fhInput, &amp;fileAttr );
+fchmod( fhOutput, fileAttr.st_mode );
+</code></pre>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/09/04/fallocate/">Fallocate</a></h1>
         
     
@@ -1232,1114 +1944,6 @@ lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/20/demangle-c-plus-plus-symbols/">Demangle C++ Symbols</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-20T09:26:40+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/20/demangle-c-plus-plus-symbols/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>當我們在debug時, 有時候會遇到未經demangle過的C++ symbol name,
-乍看之下, 常常不太能確定這到底是哪個API,
-這時可以用c++filt把這樣的symbol name轉換(demangle)成我們看得懂的symbol name.</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>C++FILT(1)                                                             GNU Development Tools                                                             C++FILT(1)
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>NAME
-</span><span class='line'>       c++filt - Demangle C++ and Java symbols.
-</span><span class='line'>
-</span><span class='line'>SYNOPSIS
-</span><span class='line'>       c++filt [-_|--strip-underscores]
-</span><span class='line'>               [-n|--no-strip-underscores]
-</span><span class='line'>               [-p|--no-params]
-</span><span class='line'>               [-t|--types]
-</span><span class='line'>               [-i|--no-verbose]
-</span><span class='line'>               [-s format|--format=format]
-</span><span class='line'>               [--help]  [--version]  [symbol...]
-</span><span class='line'>
-</span><span class='line'>DESCRIPTION
-</span><span class='line'>       The C++ and Java languages provide function overloading, which means that you can write many functions with the same name, providing that each function
-</span><span class='line'>       takes parameters of different types.  In order to be able to distinguish these similarly named functions C++ and Java encode them into a low-level assembler
-</span><span class='line'>       name which uniquely identifies each different version.  This process is known as mangling. The c++filt [1] program does the inverse mapping: it decodes
-</span><span class='line'>       (demangles) low-level names into user-level names so that they can be read.
-</span><span class='line'>
-</span><span class='line'>       Every alphanumeric word (consisting of letters, digits, underscores, dollars, or periods) seen in the input is a potential mangled name.  If the name
-</span><span class='line'>       decodes into a C++ name, the C++ name replaces the low-level name in the output, otherwise the original word is output.  In this way you can pass an entire
-</span><span class='line'>       assembler source file, containing mangled names, through c++filt and see the same source file containing demangled names.
-</span><span class='line'>
-</span><span class='line'>       You can also use c++filt to decipher individual symbols by passing them on the command line:
-</span><span class='line'>
-</span><span class='line'>               c++filt &lt;symbol&gt;
-</span><span class='line'>
-</span><span class='line'>       If no symbol arguments are given, c++filt reads symbol names from the standard input instead.  All the results are printed on the standard output.  The
-</span><span class='line'>       difference between reading names from the command line versus reading names from the standard input is that command line arguments are expected to be just
-</span><span class='line'>       mangled names and no checking is performed to separate them from surrounding text.  Thus for example:
-</span><span class='line'>
-</span><span class='line'>               c++filt -n _Z1fv
-</span><span class='line'>
-</span><span class='line'>       will work and demangle the name to "f()" whereas:
-</span><span class='line'>
-</span><span class='line'>               c++filt -n _Z1fv,
-</span><span class='line'>
-</span><span class='line'>       will not work.  (Note the extra comma at the end of the mangled name which makes it invalid).  This command however will work:
-</span><span class='line'>
-</span><span class='line'>               echo _Z1fv, | c++filt -n
-</span><span class='line'>
-</span><span class='line'>       and will display "f(),", i.e., the demangled name followed by a trailing comma.  This behaviour is because when the names are read from the standard input
-</span><span class='line'>       it is expected that they might be part of an assembler source file where there might be extra, extraneous characters trailing after a mangled name.  For
-</span><span class='line'>       example:
-</span><span class='line'>
-</span><span class='line'>                   .type   _Z1fv, @function
-</span><span class='line'>
-</span><span class='line'>OPTIONS
-</span><span class='line'>       -_
-</span><span class='line'>       --strip-underscores
-</span><span class='line'>           On some systems, both the C and C++ compilers put an underscore in front of every name.  For example, the C name "foo" gets the low-level name "_foo".
-</span><span class='line'>           This option removes the initial underscore.  Whether c++filt removes the underscore by default is target dependent.
-</span><span class='line'>
-</span><span class='line'>       -n
-</span><span class='line'>       --no-strip-underscores
-</span><span class='line'>           Do not remove the initial underscore.
-</span><span class='line'>....</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>找幾個C++的symbol name來示範一下:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ objdump -R /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | tail -n 11
-</span><span class='line'>0000000000244368 R_X86_64_JUMP_SLOT  _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
-</span><span class='line'>0000000000244370 R_X86_64_JUMP_SLOT  _ZNK7QString10startsWithERKS_N2Qt15CaseSensitivityE
-</span><span class='line'>0000000000244378 R_X86_64_JUMP_SLOT  _Znwm
-</span><span class='line'>0000000000244380 R_X86_64_JUMP_SLOT  _ZNK10QTextCodec9canEncodeE5QChar
-</span><span class='line'>0000000000244388 R_X86_64_JUMP_SLOT  _Unwind_Resume
-</span><span class='line'>0000000000244390 R_X86_64_JUMP_SLOT  _ZNK7QString10simplifiedEv
-</span><span class='line'>0000000000244398 R_X86_64_JUMP_SLOT  memcpy
-</span><span class='line'>00000000002443a0 R_X86_64_JUMP_SLOT  _ZN7QString7reallocEi
-</span><span class='line'>00000000002443a8 R_X86_64_JUMP_SLOT  _ZN10QByteArray6appendERKS_
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
-</span><span class='line'>QTextStream::QTextStream(QString*, QFlags&lt;QIODevice::OpenModeFlag&gt;)
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK7QString10startsWithERKS_N2Qt15CaseSensitivityE
-</span><span class='line'>QString::startsWith(QString const&, Qt::CaseSensitivity) const
-</span><span class='line'>bramante@matrix:~$ c++filt -n _Znwm
-</span><span class='line'>operator new(unsigned long)
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK10QTextCodec9canEncodeE5QChar
-</span><span class='line'>QTextCodec::canEncode(QChar) const
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZNK7QString10simplifiedEv
-</span><span class='line'>QString::simplified() const
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN7QString7reallocEi
-</span><span class='line'>QString::realloc(int)
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN10QByteArray6appendERKS_
-</span><span class='line'>QByteArray::append(QByteArray const&)
-</span><span class='line'>bramante@matrix:~$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>請注意, 過長的symbol name會被readelf截去尾巴,
-導致c++filt無法demangle出正確的symbol name,
-這時請在readelf使用&#8221;-W&#8221;參數, 讓readelf印出完整的symbol name,
-以下是操作範例:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ readelf -a /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | grep 244368
-</span><span class='line'>000000244368  007a00000007 R_X86_64_JUMP_SLO 0000000000000000 _ZN11QTextStreamC1EP7Q + 0
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7Q
-</span><span class='line'>_ZN11QTextStreamC1EP7Q
-</span><span class='line'>bramante@matrix:~$ readelf -Wa /usr/lib/x86_64-linux-gnu/libQtXml.so.4.8 | grep 244368
-</span><span class='line'>0000000000244368  0000007a00000007 R_X86_64_JUMP_SLOT     0000000000000000 _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE + 0
-</span><span class='line'>bramante@matrix:~$ c++filt -n _ZN11QTextStreamC1EP7QString6QFlagsIN9QIODevice12OpenModeFlagEE
-</span><span class='line'>QTextStream::QTextStream(QString*, QFlags&lt;QIODevice::OpenModeFlag&gt;)
-</span><span class='line'>bramante@matrix:~$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/19/gdb-debugging-skills-6/">GDB Debugging Skills (6)</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-19T00:53:37+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/19/gdb-debugging-skills-6/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>假設在下面的程式裡, test()這個API是用來取得遙控器的key值的.
-正常狀況下test()只會送出系統所支援的A廠遙控器的key code (100~103).
-目前拿到一支B廠的遙控器, 它的key code是0~3, 要怎樣在不改code的狀況下,
-利用gdb的batch mode去attach執行中的process,
-讓gdb幫忙做key code的轉換, 好讓系統能支援B廠的遙控器.</p>
-
-<p>範例程式:</p>
-
-<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span> <span class="nf">test</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="o">*</span> <span class="n">getValue</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'> <span class="o">*</span><span class="n">getValue</span> <span class="o">=</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">4</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">return</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
-</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">getValue</span> <span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
-</span><span class='line'>       <span class="p">{</span>
-</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="o">&amp;</span><span class="n">getValue</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[*] value: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">getValue</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>       <span class="p">}</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>編譯與執行:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
-</span><span class='line'>total 16
-</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 19 01:08 ./
-</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 11 23:32 ../
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante  385 Aug 19 00:50 gdb.cmds
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante  463 Aug 19 00:21 test.c
-</span><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
-</span><span class='line'>bramante@matrix:~/test$ ./test 15 &gt; /dev/null &
-</span><span class='line'>[1] 3027
-</span><span class='line'>bramante@matrix:~/test$ sudo gdb --batch --command=gdb.cmds --pid=3027
-</span><span class='line'>
-</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7fff23dfe000
-</span><span class='line'>0x00007f25b2148090 in nanosleep () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>Breakpoint 1 at 0x40058c: file ./test.c, line 8.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
-</span><span class='line'>8        *getValue = count % 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
-</span><span class='line'>23              printf("[*] value: %d\n",getValue);
-</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
-</span><span class='line'>11      }
-</span><span class='line'>9        count += 1 ;
-</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
-</span><span class='line'>*getValue: 103
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
-</span><span class='line'>8        *getValue = count % 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
-</span><span class='line'>23              printf("[*] value: %d\n",getValue);
-</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
-</span><span class='line'>11      }
-</span><span class='line'>9        count += 1 ;
-</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
-</span><span class='line'>*getValue: 100
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
-</span><span class='line'>8        *getValue = count % 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
-</span><span class='line'>23              printf("[*] value: %d\n",getValue);
-</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
-</span><span class='line'>11      }
-</span><span class='line'>9        count += 1 ;
-</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
-</span><span class='line'>*getValue: 101
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (getValue=0x7fff23ca24a4) at ./test.c:8
-</span><span class='line'>8        *getValue = count % 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff23ca2598) at ./test.c:23
-</span><span class='line'>23              printf("[*] value: %d\n",getValue);
-</span><span class='line'>test (getValue=0x7fff23ca24a4) at ./test.c:11
-</span><span class='line'>11      }
-</span><span class='line'>9        count += 1 ;
-</span><span class='line'>Because GDB is in replay mode, writing to memory will make the execution log unusable from this point onward.  Write memory at address 0x7fff23ca24a4?(y or n) [answered Y; input not from terminal]
-</span><span class='line'>*getValue: 102
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>[Inferior 1 (process 3027) exited normally]
-</span><span class='line'>[1]+  Done                    ./test 15 &gt; /dev/null
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>摘要出上面log裡的&#8221;*getValue: 10x&#8221;, 可以知道gdb的確幫忙做了key code的轉換:</p>
-
-<pre><code>*getValue: 103
-*getValue: 100
-*getValue: 101
-*getValue: 102
-</code></pre>
-
-<p>前面所用到的gdb.cmds檔案的內容如下:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ cat gdb.cmds
-</span><span class='line'>b test
-</span><span class='line'>
-</span><span class='line'>define printFuncInfo
-</span><span class='line'>  record
-</span><span class='line'>  finish
-</span><span class='line'>  rs
-</span><span class='line'>  rn
-</span><span class='line'>  if *getValue == 0
-</span><span class='line'>    set *getValue=100
-</span><span class='line'>   else
-</span><span class='line'>    if *getValue == 1
-</span><span class='line'>      set *getValue=101
-</span><span class='line'>     else
-</span><span class='line'>      if *getValue == 2
-</span><span class='line'>        set *getValue=102
-</span><span class='line'>       else
-</span><span class='line'>        set *getValue=103
-</span><span class='line'>      end
-</span><span class='line'>    end
-</span><span class='line'>  end
-</span><span class='line'>  printf "*getValue: %d\n", *getValue
-</span><span class='line'>  record stop
-</span><span class='line'>  continue
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>commands 1
-</span><span class='line'>  printFuncInfo
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>continue
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>神奇吧, gdb還能幫忙轉換key code ~</p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/18/gdb-debugging-skills-5/">GDB Debugging Skills (5)</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-18T09:24:13+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/18/gdb-debugging-skills-5/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>debug時必需要能夠掌握程式的flow,
-API如果有多個return點,
-必須要知道程式到底從哪一個位置return,
-若要透過gdb取得這方面的資訊,
-手動加break point是比較麻煩的,
-較為自動化的方法可以使用gdb的reverse commands.</p>
-
-<p>下面示範如何在gdb的batch mode去attach執行中的process,
-並印出API在哪一行return的.</p>
-
-<p>範例程式:</p>
-
-<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">unsigned</span> <span class="kt">int</span> <span class="nf">test</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">arg</span> <span class="o">%=</span> <span class="mi">4</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">switch</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>    <span class="k">case</span> <span class="mi">0</span><span class="o">:</span>
-</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
-</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">case</span> <span class="mi">1</span><span class="o">:</span>
-</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
-</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">case</span> <span class="mi">2</span><span class="o">:</span>
-</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
-</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">case</span> <span class="mi">3</span><span class="o">:</span>
-</span><span class='line'>    <span class="k">default</span><span class="o">:</span>
-</span><span class='line'>           <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
-</span><span class='line'>           <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="n">arg</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
-</span><span class='line'>       <span class="p">{</span>
-</span><span class='line'>        <span class="n">test</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>       <span class="p">}</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>編譯與執行:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
-</span><span class='line'>total 16
-</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 18 09:37 ./
-</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 11 23:32 ../
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante  154 Aug 18 09:20 gdb.cmds
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante  581 Aug 18 09:18 test.c
-</span><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
-</span><span class='line'>bramante@matrix:~/test$ ./test 15 &gt; /dev/null &
-</span><span class='line'>[1] 2927
-</span><span class='line'>bramante@matrix:~/test$ sudo gdb --batch --command=gdb.cmds --pid=2927
-</span><span class='line'>[sudo] password for bramante:
-</span><span class='line'>0x00007f287fe2a090 in nanosleep () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>Breakpoint 1 at 0x40054b: file ./test.c, line 7.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=10) at ./test.c:7
-</span><span class='line'>7        arg %= 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
-</span><span class='line'>36              sleep(1);
-</span><span class='line'>Value returned is $1 = 2
-</span><span class='line'>test (arg=2) at ./test.c:25
-</span><span class='line'>25      }
-</span><span class='line'>17                 return arg ;
-</span><span class='line'>arg: 2
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=11) at ./test.c:7
-</span><span class='line'>7        arg %= 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
-</span><span class='line'>36              sleep(1);
-</span><span class='line'>Value returned is $2 = 3
-</span><span class='line'>test (arg=3) at ./test.c:25
-</span><span class='line'>25      }
-</span><span class='line'>21                 return arg ;
-</span><span class='line'>arg: 3
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=12) at ./test.c:7
-</span><span class='line'>7        arg %= 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
-</span><span class='line'>36              sleep(1);
-</span><span class='line'>Value returned is $3 = 0
-</span><span class='line'>test (arg=0) at ./test.c:25
-</span><span class='line'>25      }
-</span><span class='line'>11                 return arg ;
-</span><span class='line'>arg: 0
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=13) at ./test.c:7
-</span><span class='line'>7        arg %= 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
-</span><span class='line'>36              sleep(1);
-</span><span class='line'>Value returned is $4 = 1
-</span><span class='line'>test (arg=1) at ./test.c:25
-</span><span class='line'>25      }
-</span><span class='line'>14                 return arg ;
-</span><span class='line'>arg: 1
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=14) at ./test.c:7
-</span><span class='line'>7        arg %= 4 ;
-</span><span class='line'>main (argc=2, argv=0x7fff02d8e6b8) at ./test.c:36
-</span><span class='line'>36              sleep(1);
-</span><span class='line'>Value returned is $5 = 2
-</span><span class='line'>test (arg=2) at ./test.c:25
-</span><span class='line'>25      }
-</span><span class='line'>17                 return arg ;
-</span><span class='line'>arg: 2
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>[Inferior 1 (process 2927) exited normally]
-</span><span class='line'>[1]+  Done                    ./test 15 &gt; /dev/null
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>摘要出上面log裡的&#8221;return arg&#8221;, 可以知道return點有4個,
-分別在 11, 14, 17, 21 行:</p>
-
-<pre><code>17                 return arg ;
-21                 return arg ;
-11                 return arg ;
-14                 return arg ;
-17                 return arg ;
-</code></pre>
-
-<p>前面所用到的gdb.cmds檔案的內容如下:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>gdb.cmds</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ cat gdb.cmds
-</span><span class='line'>b test
-</span><span class='line'>
-</span><span class='line'>define printFuncInfo
-</span><span class='line'>  record
-</span><span class='line'>  finish
-</span><span class='line'>  rs
-</span><span class='line'>  rn
-</span><span class='line'>  printf "arg: %d\n", arg
-</span><span class='line'>  record stop
-</span><span class='line'>  continue
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>commands 1
-</span><span class='line'>  printFuncInfo
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>continue
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>要使用reverse command前要先record,
-使用後要record stop,
-其中的rs是reverse-step,
-rn則是reverse-next,
-reverse command的執行方向與正常的command相反.
-由於finish時已經回到main(), 因此需要先執行rs回到test(),
-再執行rn找到return點.</p>
-
-<p>沒有source code時的執行狀況如下:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ./test 10 &gt; /dev/null &
-</span><span class='line'>[1] 2968
-</span><span class='line'>bramante@matrix:~/test$ sudo gdb --batch --command=gdb.cmds --pid=2968
-</span><span class='line'>0x00007f4f518f3090 in nanosleep () from /lib/x86_64-linux-gnu/libc.so.6
-</span><span class='line'>Breakpoint 1 at 0x40054b: file ./test.c, line 7.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=5) at ./test.c:7
-</span><span class='line'>7       ./test.c: No such file or directory.
-</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
-</span><span class='line'>36      in ./test.c
-</span><span class='line'>Value returned is $1 = 1
-</span><span class='line'>test (arg=1) at ./test.c:25
-</span><span class='line'>25      in ./test.c
-</span><span class='line'>14      in ./test.c
-</span><span class='line'>arg: 1
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=6) at ./test.c:7
-</span><span class='line'>7       in ./test.c
-</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
-</span><span class='line'>36      in ./test.c
-</span><span class='line'>Value returned is $2 = 2
-</span><span class='line'>test (arg=2) at ./test.c:25
-</span><span class='line'>25      in ./test.c
-</span><span class='line'>17      in ./test.c
-</span><span class='line'>arg: 2
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=7) at ./test.c:7
-</span><span class='line'>7       in ./test.c
-</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
-</span><span class='line'>36      in ./test.c
-</span><span class='line'>Value returned is $3 = 3
-</span><span class='line'>test (arg=3) at ./test.c:25
-</span><span class='line'>25      in ./test.c
-</span><span class='line'>21      in ./test.c
-</span><span class='line'>arg: 3
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=8) at ./test.c:7
-</span><span class='line'>7       in ./test.c
-</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
-</span><span class='line'>36      in ./test.c
-</span><span class='line'>Value returned is $4 = 0
-</span><span class='line'>test (arg=0) at ./test.c:25
-</span><span class='line'>25      in ./test.c
-</span><span class='line'>11      in ./test.c
-</span><span class='line'>arg: 0
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>
-</span><span class='line'>Breakpoint 1, test (arg=9) at ./test.c:7
-</span><span class='line'>7       in ./test.c
-</span><span class='line'>main (argc=2, argv=0x7fff9f6e2d98) at ./test.c:36
-</span><span class='line'>36      in ./test.c
-</span><span class='line'>Value returned is $5 = 1
-</span><span class='line'>test (arg=1) at ./test.c:25
-</span><span class='line'>25      in ./test.c
-</span><span class='line'>14      in ./test.c
-</span><span class='line'>arg: 1
-</span><span class='line'>Process record is stopped and all execution logs are deleted.
-</span><span class='line'>[Inferior 1 (process 2968) exited normally]
-</span><span class='line'>[1]+  Done                    ./test 10 &gt; /dev/null
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>在 <a href="http://www.gnu.org/software/gdb/news">http://www.gnu.org/software/gdb/news</a>
- 有提到, GDB 7.5之後才支援ARM.</p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -2357,23 +1961,23 @@ reverse command的執行方向與正常的command相反.
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs On Exit</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/04/program-crashes-on-exit/">Program Crashes On Exit</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/04/direct-io/">Direct IO</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/04/fallocate/">fallocate</a>
         </li>
       
         <li>
           <a href="/blog/2015/09/03/download-the-source-code-of-the-ginga/">Download the source code of the Ginga</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/09/02/secure-copy/">secure copy</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/27/nohup/">nohup</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/08/27/lsof/">lsof</a>
         </li>
       
     </ul>

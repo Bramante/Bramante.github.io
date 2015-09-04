@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>GDB Debugging Skills (1) - Bramante&#x27;s Blog</title>
+  <title>Program Crashes On Exit - Bramante&#x27;s Blog</title>
   <meta name="author" content="Bramante">
   <link rel="author" href="humans.txt">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -13,13 +13,9 @@
   
     
   
-  <meta name="description" content="gdb以Hex格式印出100個byte的array內容: x/100ubx array gdb以二進制印出變數的value: p /t var gdb印出function prototype: call function_name 以下是實際操作的範例: test.c1
-2
-3
-4
-5
-6
-7 &hellip;">
+  <meta name="description" content="之前有遇過程式在執行exit()之後, 竟然發生crash的狀況.
+這個問題罩因於, 在執行exit()時, 會對C++的static/global Object進行de-init,
+若C++ class的destructor沒有寫好, 就會在執行destructor時發生crash, &hellip;">
   
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -27,23 +23,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://Bramante.github.io/blog/2015/08/10/gdb-debugging-skills-1/">
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/09/04/program-crashes-on-exit/">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
   <meta name="og:type" content="website" />
   <meta name="og:site_name" content="Bramante&#x27;s Blog" />
-  <meta name="og:title" content="GDB Debugging Skills (1)" />
-  <meta name="og:description" content="gdb以Hex格式印出100個byte的array內容: x/100ubx array gdb以二進制印出變數的value: p /t var gdb印出function prototype: call function_name 以下是實際操作的範例: test.c1
-2
-3
-4
-5
-6
-7 &hellip;" />
-  <meta name="og:url" content="http://Bramante.github.io/blog/2015/08/10/gdb-debugging-skills-1/"/>
-  <meta name="url" content="http://Bramante.github.io/blog/2015/08/10/gdb-debugging-skills-1/">
+  <meta name="og:title" content="Program Crashes On Exit" />
+  <meta name="og:description" content="之前有遇過程式在執行exit()之後, 竟然發生crash的狀況.
+這個問題罩因於, 在執行exit()時, 會對C++的static/global Object進行de-init,
+若C++ class的destructor沒有寫好, 就會在執行destructor時發生crash, &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/09/04/program-crashes-on-exit/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/09/04/program-crashes-on-exit/">
   
   <meta name="subject" content=""/>
   <meta name="category" content=""/>
@@ -90,7 +82,7 @@
   <header>
     
       
-        <h1 class="entry-title">GDB Debugging Skills (1)</h1>
+        <h1 class="entry-title">Program Crashes on Exit</h1>
       
     
     
@@ -116,7 +108,7 @@
   
 
 
-<time datetime="2015-08-10T23:33:42+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-09-04T23:09:08+08:00" pubdate data-updated="true"></time> - 
         
 
 
@@ -128,46 +120,12 @@
   </header>
 
 
-  <div class="entry-content"><p>gdb以Hex格式印出100個byte的array內容: x/100ubx array</p>
+  <div class="entry-content"><p>之前有遇過程式在執行exit()之後, 竟然發生crash的狀況.
+這個問題罩因於, 在執行exit()時, 會對C++的static/global Object進行de-init,
+若C++ class的destructor沒有寫好, 就會在執行destructor時發生crash,
+下面的程式故意在destructor裡製造crash, 重製這樣的bug:</p>
 
-<p>gdb以二進制印出變數的value: p /t var</p>
-
-<p>gdb印出function prototype: call function_name</p>
-
-<p>以下是實際操作的範例:</p>
-
-<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">var</span> <span class="o">=</span> <span class="mh">0x5A</span> <span class="p">;</span>
-</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">array</span><span class="p">[</span><span class="mi">100</span><span class="p">];</span>
-</span><span class='line'> <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>     <span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">100</span> <span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>crash.cpp</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -200,42 +158,75 @@
 <span class='line-number'>31</span>
 <span class='line-number'>32</span>
 <span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
-</span><span class='line'>bramante@matrix:~/test$ cat -n test.c
-</span><span class='line'>     1  #include &lt;stdio.h&gt;
-</span><span class='line'>     2
-</span><span class='line'>     3  int main(void)
-</span><span class='line'>     4  {
-</span><span class='line'>     5   unsigned char var = 0x5A ;
-</span><span class='line'>     6   unsigned char array[100];
-</span><span class='line'>     7   int i ;
-</span><span class='line'>     8   for( i = 0 ; i &lt; 100 ; i ++ )
-</span><span class='line'>     9      {
-</span><span class='line'>    10       array[i] = i + 100 ;
-</span><span class='line'>    11      }
-</span><span class='line'>    12   return 0 ;
-</span><span class='line'>    13  }
-</span><span class='line'>bramante@matrix:~/test$ gdb ./test
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span><span class="o">*</span> <span class="n">ptr</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">PARENT</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">public</span><span class="o">:</span>
+</span><span class='line'>              <span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="k">if</span><span class="p">(</span><span class="n">ptr</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">{</span>
+</span><span class='line'>                  <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class='line'>                 <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="o">~</span><span class="n">PARENT</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">free</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>
+</span><span class='line'>               <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="mh">0xDEADBEEF</span> <span class="p">;</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>              <span class="kt">void</span> <span class="n">test</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>               <span class="n">printf</span><span class="p">(</span><span class="s">&quot;test()</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">static</span> <span class="n">PARENT</span> <span class="n">parentObj1</span><span class="p">,</span> <span class="n">parentObj2</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">parentObj1</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">parentObj2</span><span class="p">.</span><span class="n">test</span><span class="p">();</span>
+</span><span class='line'> <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ g++ -o ./crash ./crash.cpp
+</span><span class='line'>bramante@matrix:~/test$ gdb ./crash
 </span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
 </span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
 </span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
@@ -245,42 +236,51 @@
 </span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
 </span><span class='line'>For bug reporting instructions, please see:
 </span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
-</span><span class='line'>Reading symbols from /home/bramante/test/test...done.
-</span><span class='line'>(gdb) b test.c:12
-</span><span class='line'>Breakpoint 1 at 0x400561: file ./test.c, line 12.
+</span><span class='line'>Reading symbols from /home/bramante/test/crash...(no debugging symbols found)...done.
 </span><span class='line'>(gdb) run
-</span><span class='line'>Starting program: /home/bramante/test/test
-</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
+</span><span class='line'>Starting program: /home/bramante/test/crash
+</span><span class='line'>test()
+</span><span class='line'>test()
 </span><span class='line'>
-</span><span class='line'>Breakpoint 1, main () at ./test.c:12
-</span><span class='line'>12       return 0 ;
-</span><span class='line'>(gdb) x/100ubx array
-</span><span class='line'>0x7fffffffe460: 0x64    0x65    0x66    0x67    0x68    0x69    0x6a    0x6b
-</span><span class='line'>0x7fffffffe468: 0x6c    0x6d    0x6e    0x6f    0x70    0x71    0x72    0x73
-</span><span class='line'>0x7fffffffe470: 0x74    0x75    0x76    0x77    0x78    0x79    0x7a    0x7b
-</span><span class='line'>0x7fffffffe478: 0x7c    0x7d    0x7e    0x7f    0x80    0x81    0x82    0x83
-</span><span class='line'>0x7fffffffe480: 0x84    0x85    0x86    0x87    0x88    0x89    0x8a    0x8b
-</span><span class='line'>0x7fffffffe488: 0x8c    0x8d    0x8e    0x8f    0x90    0x91    0x92    0x93
-</span><span class='line'>0x7fffffffe490: 0x94    0x95    0x96    0x97    0x98    0x99    0x9a    0x9b
-</span><span class='line'>0x7fffffffe498: 0x9c    0x9d    0x9e    0x9f    0xa0    0xa1    0xa2    0xa3
-</span><span class='line'>0x7fffffffe4a0: 0xa4    0xa5    0xa6    0xa7    0xa8    0xa9    0xaa    0xab
-</span><span class='line'>0x7fffffffe4a8: 0xac    0xad    0xae    0xaf    0xb0    0xb1    0xb2    0xb3
-</span><span class='line'>0x7fffffffe4b0: 0xb4    0xb5    0xb6    0xb7    0xb8    0xb9    0xba    0xbb
-</span><span class='line'>0x7fffffffe4b8: 0xbc    0xbd    0xbe    0xbf    0xc0    0xc1    0xc2    0xc3
-</span><span class='line'>0x7fffffffe4c0: 0xc4    0xc5    0xc6    0xc7
-</span><span class='line'>(gdb) p /t var
-</span><span class='line'>$1 = 1011010
-</span><span class='line'>(gdb) call main
-</span><span class='line'>$2 = {int (void)} 0x400524 &lt;main&gt;
+</span><span class='line'>Program received signal SIGSEGV, Segmentation fault.
+</span><span class='line'>__GI___libc_free (mem=0xdeadbeef) at malloc.c:2970
+</span><span class='line'>2970    malloc.c: No such file or directory.
+</span><span class='line'>(gdb) bt
+</span><span class='line'>#0  __GI___libc_free (mem=0xdeadbeef) at malloc.c:2970
+</span><span class='line'>#1  0x0000000000400831 in PARENT::~PARENT() ()
+</span><span class='line'>#2  0x00007ffff77575b1 in __run_exit_handlers (status=0, listp=0x7ffff7ad3688, run_list_atexit=true) at exit.c:78
+</span><span class='line'>#3  0x00007ffff7757635 in __GI_exit (status=&lt;optimized out&gt;) at exit.c:100
+</span><span class='line'>#4  0x00000000004007ea in main ()
 </span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>
 
-<p>在得知function prototype後,
-就能利用LD_PRELOAD來hook function,
-在整合沒有source code的third-party的library時,
-這是一個重要的debug技巧.</p>
+<p>從callstack可以看出是main()執行exit()時,
+在class PARENT的destructor發生crash.
+crash的原因是程式去踩到一個不合法的address 0xDEADBEEF.</p>
+
+<p>這個bug, 在glibc的callstack看到的是:</p>
+
+<pre><code>__run_exit_handlers()
+__GI_exit()
+</code></pre>
+
+<p>在bionic libc看到的則是:</p>
+
+<pre><code>__cxa_finalize()
+exit()
+</code></pre>
+
+<p>不同的libc在這部份的實作上, 似乎有點不一樣.</p>
+
+<p>C++的程式在一跑起來時, 會利用__cxa_atexit()去註冊destructor,
+然後在程式結束執行時, 便會去執行這些登記在案的destructor.</p>
+
+<p>work around bug的方法很簡單, 如果只是單純要程式結束, 並且不想看到crash的log,
+可以把exit()換成kill(getpid(), SIGKILL),
+或是把exit()換成_exit(), 讓程式刻意不去執行destructor,
+便可以讓crash不要發生.</p>
 </div>
 
 
@@ -311,7 +311,7 @@
   
 
 
-<time datetime="2015-08-10T23:33:42+08:00" pubdate data-updated="true"></time> - 
+<time datetime="2015-09-04T23:09:08+08:00" pubdate data-updated="true"></time> - 
       
 
 
@@ -319,7 +319,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/08/10/gdb-debugging-skills-1/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/08/10/gdb-debugging-skills-1/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/09/04/program-crashes-on-exit/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/09/04/program-crashes-on-exit/" >Tweet</a>
   
   
   
@@ -327,10 +327,10 @@
 
     
     
-      <a class="pull-left" href="/blog/2015/08/09/dump-pcr/" title="Previous Post: Dump PCR">&laquo; Dump PCR</a>
+      <a class="pull-left" href="/blog/2015/09/04/direct-io/" title="Previous Post: Direct IO">&laquo; Direct IO</a>
     
     
-      <a class="pull-right" href="/blog/2015/08/11/gdb-debugging-skills-2/" title="Next Post: GDB Debugging Skills (2)">GDB Debugging Skills (2) &raquo;</a>
+      <a class="pull-right" href="/blog/2015/09/04/program-hangs-on-exit/" title="Next Post: Program Hangs On Exit">Program Hangs On Exit &raquo;</a>
     
   </footer>
 
@@ -428,8 +428,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F10%2Fgdb-debugging-skills-1%2F';
-        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F08%2F10%2Fgdb-debugging-skills-1%2F';
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F09%2F04%2Fprogram-crashes-on-exit%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F09%2F04%2Fprogram-crashes-on-exit%2F';
         var disqus_script = 'embed.js';
       
     (function () {

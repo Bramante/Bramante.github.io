@@ -1,0 +1,130 @@
+---
+layout: post
+title: "Direct IO"
+date: 2015-09-04 23:02:28 +0800
+comments: true
+categories: 
+---
+
+Direct IO比一般read/write file的方式來得快, 
+但是它有一些Alignment的規則要遵守, 
+不然程式會不work, 下面是用Direct IO寫成的一支copy程式:
+
+``` c my_copy.c
+	
+	#include <stdio.h>
+	#include <stddef.h>
+	#include <dirent.h>
+	#include <unistd.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <linux/fcntl.h>
+	
+	#define BLOCK_SIZE 4096
+	
+	int main(int argc, char* argv[])
+	{
+	 int fhInput ;
+	 int fhOutput ;
+	 int len ;
+	 int sum ;
+	 static unsigned char buf[BLOCK_SIZE] __attribute__((aligned (4096))) ;
+	
+	 if( argc == 3 )
+	   {
+	    fhInput = open( argv[1], O_RDONLY | O_DIRECT );
+	    fhOutput = open( argv[2], O_WRONLY | O_CREAT | O_TRUNC |O_DIRECT );
+	
+	    if((fhInput < 0) || (fhOutput < 0))
+	      {
+	       printf("[Error] open file fail.\n");
+	       if( fhInput >= 0 )
+	         {
+	          close(fhInput);
+	         }
+	        else
+	         {
+	          printf("[Error] Can not open %s\n", argv[1] );
+	         }
+	
+	       if( fhOutput >= 0 )
+	         {
+	          close(fhOutput);
+	         }
+	        else
+	         {
+	          printf("[Error] Can not open %s\n", argv[2] );
+	         }
+	       return -1 ;
+	      }
+	     else
+	      {
+	       sum = 0 ;
+	       do{
+	          len = read( fhInput, buf , BLOCK_SIZE );
+	          //printf("len: %d\n",len);
+	          write( fhOutput, buf, BLOCK_SIZE );
+	          sum += BLOCK_SIZE ;
+	         }while(len == BLOCK_SIZE);
+	
+	       if( len > 0 )
+	         {
+	          ftruncate( fhOutput, sum - BLOCK_SIZE + len );
+	         }
+	
+	       struct stat fileAttr ;
+	       fstat( fhInput, &fileAttr );
+	       fchmod( fhOutput, fileAttr.st_mode );
+	       close(fhOutput);
+	       close(fhInput);
+	
+	       return 0;
+	      }
+	   }
+	  else
+	   {
+	    printf("[help] ./my_copy ./src_file ./dest_file \n");
+	    return -1 ;
+	   }
+	}
+```
+
+編譯與執行:
+
+<font face="sans">
+``` plain Terminal
+	bramante@matrix:~/test$ gcc -o ./my_copy ./my_copy.c
+	bramante@matrix:~/test$ which ls
+	/bin/ls
+	bramante@matrix:~/test$ ll /bin/ls
+	-rwxr-xr-x 1 root root 105840 Nov 20  2012 /bin/ls*
+	bramante@matrix:~/test$ ./my_copy /bin/ls ./ls
+	bramante@matrix:~/test$ ll | grep ls
+	-rwxr-xr-x 1 bramante bramante 105840 Sep  4 11:15 ls*
+	bramante@matrix:~/test$ diff ./ls /bin/ls
+	bramante@matrix:~/test$
+	bramante@matrix:~/test$ ./ls -al | grep ls
+	-rwxr-xr-x 1 bramante bramante 105840 Sep  4 11:15 ls
+	bramante@matrix:~/test$
+```
+</font>
+
+Direct IO 所read/write的byte數, 以及read/write的起點, 
+還有read()/write()所使用的memory buffer, 應該都要align在512 byte的倍數上,
+精確的alignment限制可以參考網路上的說明:
+
+http://people.redhat.com/msnitzer/docs/io-limits.txt
+	
+gcc有提供attribute, 讓變數可以align在特定的address上, 我只有試過在全域變數上確實有用, 其他的沒試過:
+	
+	__attribute__(aligned (4096))
+
+因為在這支程式裡, Direct IO一次read/write 4096 byte, 
+因此copy出的file會多一截"尾巴", 我用ftruncate()來cut掉它:
+
+	ftruncate( fhOutput, sum - BLOCK_SIZE + len );
+
+為了讓copy出的file的屬性和原本的file相同, 因此我用fstat()與fchmod()複製了檔案屬性:
+
+	fstat( fhInput, &fileAttr );
+	fchmod( fhOutput, fileAttr.st_mode );

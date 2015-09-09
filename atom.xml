@@ -4,7 +4,7 @@
   <title><![CDATA[Bramante&#x27;s Blog]]></title>
   <link href="http://Bramante.github.io/atom.xml" rel="self"/>
   <link href="http://Bramante.github.io/"/>
-  <updated>2015-09-04T23:34:16+08:00</updated>
+  <updated>2015-09-09T09:25:51+08:00</updated>
   <id>http://Bramante.github.io/</id>
   <author>
     <name><![CDATA[Bramante]]></name>
@@ -12,6 +12,85 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Expand Macro]]></title>
+    <link href="http://Bramante.github.io/blog/2015/09/09/expand-macro/"/>
+    <updated>2015-09-09T09:22:22+08:00</updated>
+    <id>http://Bramante.github.io/blog/2015/09/09/expand-macro</id>
+    <content type="html"><![CDATA[<p>閱讀別人所寫的程式, 如果遇到複雜的Macro,
+不太能確定執行後會有什麼結果時,
+可以使用Expand Macro的技巧,
+把Macro給展開, 這樣程式應該會變得比較容易了解一點.</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define SUM( a, b ) (a+b)</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">c</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">c</span> <span class="o">=</span> <span class="n">SUM</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">);</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;c = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">c</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>利用gcc的&#8221;-E&#8221;參數, 可以把Macro給展開:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test/Expand_Macro$ gcc -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test/Expand_Macro$ ./test
+</span><span class='line'>c = 3
+</span><span class='line'>bramante@matrix:~/test/Expand_Macro$ gcc -E ./test.c | grep -A8 "int main(void)"
+</span><span class='line'>int main(void)
+</span><span class='line'>{
+</span><span class='line'> int a = 1 ;
+</span><span class='line'> int b = 2 ;
+</span><span class='line'> int c ;
+</span><span class='line'> c = (a+b);
+</span><span class='line'> printf("c = %d\n",c);
+</span><span class='line'> return 0 ;
+</span><span class='line'>}
+</span><span class='line'>bramante@matrix:~/test/Expand_Macro$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Program Hangs On Exit]]></title>
@@ -4342,208 +4421,6 @@ parse出PCR value的function是用FFmpeg裡的code修改而來,
 </span><span class='line'>video pts: 22986000
 </span><span class='line'>video pts: 23076000
 </span><span class='line'>bramante@matrix:~/pts$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Send signal to thread]]></title>
-    <link href="http://Bramante.github.io/blog/2015/08/07/send-signal-to-thread/"/>
-    <updated>2015-08-07T00:39:25+08:00</updated>
-    <id>http://Bramante.github.io/blog/2015/08/07/send-signal-to-thread</id>
-    <content type="html"><![CDATA[<p>使用pthread_kill()發signal給thread, 可以做到在run-time去調整thread的行為, 下面這個範例是發signal給thread, 把thread給結束掉.</p>
-
-<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;signal.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;time.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;errno.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define THREAD_SLEEP(ms) {\</span>
-</span><span class='line'><span class="cp">         struct timespec delay, rem ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_sec = ms / 1000 ;\</span>
-</span><span class='line'><span class="cp">         delay.tv_nsec = ((ms % 1000)*1000000) ;\</span>
-</span><span class='line'><span class="cp">         while(nanosleep(&amp;delay, &amp;rem) == -1 &amp;&amp; errno == EINTR) delay = rem;\</span>
-</span><span class='line'><span class="cp">        }         </span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">pthread_t</span> <span class="n">th1</span> <span class="p">;</span>
-</span><span class='line'><span class="kt">pthread_t</span> <span class="n">th2</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span> <span class="nf">signalHandler</span><span class="p">(</span><span class="kt">int</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">signalHandler</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">signalHandler(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="n">pthread_exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction1(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction1</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">printf</span><span class="p">(</span><span class="s">&quot;1&quot;</span><span class="p">);</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">void</span><span class="o">*</span> <span class="nf">threadFunction2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction2(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">threadFunction2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class='line'> <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>       <span class="n">printf</span><span class="p">(</span><span class="s">&quot;2&quot;</span><span class="p">);</span>
-</span><span class='line'>       <span class="n">THREAD_SLEEP</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'> <span class="k">return</span> <span class="nb">NULL</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">main(): %lu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">pthread_self</span><span class="p">());</span>
-</span><span class='line'> <span class="k">struct</span> <span class="n">sigaction</span> <span class="n">newact</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">newact</span><span class="p">.</span><span class="n">sa_handler</span> <span class="o">=</span> <span class="n">signalHandler</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">sigaction</span><span class="p">(</span><span class="n">SIGALRM</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">newact</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
-</span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">threadFunction2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-</span><span class='line'> <span class="n">pthread_kill</span><span class="p">(</span> <span class="n">th1</span><span class="p">,</span> <span class="n">SIGALRM</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th1</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">join1</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class='line'> <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-</span><span class='line'> <span class="n">pthread_kill</span><span class="p">(</span> <span class="n">th2</span><span class="p">,</span> <span class="n">SIGALRM</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pthread_join</span><span class="p">(</span><span class="n">th2</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">join2</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/thread$ gcc -o ./test ./test.c -lpthread
-</span><span class='line'>bramante@matrix:~/thread$ ./test
-</span><span class='line'>
-</span><span class='line'>main(): 140158652921600
-</span><span class='line'>
-</span><span class='line'>threadFunction2(): 140158636234496
-</span><span class='line'>
-</span><span class='line'>threadFunction2
-</span><span class='line'>2
-</span><span class='line'>threadFunction1(): 140158644627200
-</span><span class='line'>
-</span><span class='line'>threadFunction1
-</span><span class='line'>121212121211212122121121221121221121221121221122121121221122112211221122112212112122112212112122112122112211221122112122112212112211221122112211221122112211221122112211221122112211212
-</span><span class='line'>signalHandler
-</span><span class='line'>
-</span><span class='line'>signalHandler(): 140158644627200
-</span><span class='line'>
-</span><span class='line'>join1
-</span><span class='line'>2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222
-</span><span class='line'>signalHandler
-</span><span class='line'>
-</span><span class='line'>signalHandler(): 140158636234496
-</span><span class='line'>
-</span><span class='line'>join2
-</span><span class='line'>bramante@matrix:~/thread$</span></code></pre></td></tr></table></div></figure>
 
 
 <p></font></p>

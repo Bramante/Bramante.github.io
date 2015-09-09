@@ -126,6 +126,132 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/09/09/expand-macro/">Expand Macro</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-09T09:22:22+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/09/09/expand-macro/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>閱讀別人所寫的程式, 如果遇到複雜的Macro,
+不太能確定執行後會有什麼結果時,
+可以使用Expand Macro的技巧,
+把Macro給展開, 這樣程式應該會變得比較容易了解一點.</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define SUM( a, b ) (a+b)</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">c</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">c</span> <span class="o">=</span> <span class="n">SUM</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">);</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;c = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">c</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>利用gcc的&#8221;-E&#8221;參數, 可以把Macro給展開:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test/Expand_Macro$ gcc -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test/Expand_Macro$ ./test
+</span><span class='line'>c = 3
+</span><span class='line'>bramante@matrix:~/test/Expand_Macro$ gcc -E ./test.c | grep -A8 "int main(void)"
+</span><span class='line'>int main(void)
+</span><span class='line'>{
+</span><span class='line'> int a = 1 ;
+</span><span class='line'> int b = 2 ;
+</span><span class='line'> int c ;
+</span><span class='line'> c = (a+b);
+</span><span class='line'> printf("c = %d\n",c);
+</span><span class='line'> return 0 ;
+</span><span class='line'>}
+</span><span class='line'>bramante@matrix:~/test/Expand_Macro$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs on Exit</a></h1>
         
     
@@ -1661,289 +1787,6 @@ lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/">Extract Audio From a Video Using FFmpeg</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-26T00:02:31+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/26/extract-audio-from-a-video-using-ffmpeg/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>使用FFmpeg可以很容易地把Audio由TS file裡頭給分離出來,
-如果Audio是使用MPEG Audio來Encode的,
-那麼把分離出的Audio另存成*.mp3的file,
-就可以直接用一般的軟體來播放.</p>
-
-<p>以下是操作範例:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-<span class='line-number'>106</span>
-<span class='line-number'>107</span>
-<span class='line-number'>108</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test/audio$ ll
-</span><span class='line'>total 10592
-</span><span class='line'>drwxrwxr-x 2 bramante bramante     4096 Aug 24 17:52 ./
-</span><span class='line'>drwxrwxr-x 4 bramante bramante     4096 Aug 24 17:51 ../
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante 10834252 Aug 24 17:25 demo.ts*
-</span><span class='line'>bramante@matrix:~/test/audio$ ffmpeg -i demo.ts -acodec copy demo.mp3
-</span><span class='line'>ffmpeg version 0.8.17-4:0.8.17-0ubuntu0.12.04.1, Copyright (c) 2000-2014 the Libav developers
-</span><span class='line'>  built on Mar 16 2015 13:26:50 with gcc 4.6.3
-</span><span class='line'>The ffmpeg program is only provided for script compatibility and will be removed
-</span><span class='line'>in a future release. It has been deprecated in the Libav project to allow for
-</span><span class='line'>incompatible command line syntax improvements in its replacement called avconv
-</span><span class='line'>(see Changelog for details). Please use avconv instead.
-</span><span class='line'>[mp3 @ 0x86dd60] Header missing
-</span><span class='line'>[mpegts @ 0x8337a0] max_analyze_duration reached
-</span><span class='line'>[NULL @ 0x878c40] start time is not set in estimate_timings_from_pts
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 9 got 7
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1601 expected 13 got 2
-</span><span class='line'>Input #0, mpegts, from 'demo.ts':
-</span><span class='line'>  Duration: 26:30:41.26, start: 50944.346833, bitrate: 0 kb/s
-</span><span class='line'>  Program 25664
-</span><span class='line'>  Program 25728
-</span><span class='line'>  Program 25792
-</span><span class='line'>  Program 25856
-</span><span class='line'>  Program 25920
-</span><span class='line'>  Program 26240
-</span><span class='line'>  Program 26368
-</span><span class='line'>  Program 26560
-</span><span class='line'>  Program 27136
-</span><span class='line'>  Program 27168
-</span><span class='line'>  Program 27360
-</span><span class='line'>  Program 27456
-</span><span class='line'>  Program 27520
-</span><span class='line'>  Program 27584
-</span><span class='line'>  Program 27648
-</span><span class='line'>  Program 27680
-</span><span class='line'>  Program 27712
-</span><span class='line'>  Program 27744
-</span><span class='line'>  Program 27840
-</span><span class='line'>  Program 27872
-</span><span class='line'>  Program 27904
-</span><span class='line'>  Program 28032
-</span><span class='line'>  Program 28096
-</span><span class='line'>  Program 28160
-</span><span class='line'>    Stream #0.0[0x641](eng): Audio: mp2, 48000 Hz, mono, s16, 64 kb/s
-</span><span class='line'>    Stream #0.1[0x642]: Data: [11][0][0][0] / 0x000B
-</span><span class='line'>  Program 28288
-</span><span class='line'>  Program 28320
-</span><span class='line'>  Program 28352
-</span><span class='line'>  Program 28384
-</span><span class='line'>  Program 28416
-</span><span class='line'>  Program 28480
-</span><span class='line'>  Program 28512
-</span><span class='line'>Output #0, mp3, to 'demo.mp3':
-</span><span class='line'>  Metadata:
-</span><span class='line'>    TSSE            : Lavf53.21.1
-</span><span class='line'>    Stream #0.0(eng): Audio: mp2, 48000 Hz, mono, 64 kb/s
-</span><span class='line'>Stream mapping:
-</span><span class='line'>  Stream #0.0 -&gt; #0.0
-</span><span class='line'>Press ctrl-c to stop encoding
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 15 got 3
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 5 got 9
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 11 got 15
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 1 got 5
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 0 expected 10 got 11
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1601 expected 9 got 6
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 3 got 13
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 14 got 1
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1602 expected 12 got 10
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 16 expected 11 got 5
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 7 got 13
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 15 got 3
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 5 got 9
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 11 got 15
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 20 expected 1 got 5
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 18 expected 9 got 7
-</span><span class='line'>[mpegts @ 0x8337a0] Continuity check failed for pid 1601 expected 13 got 2
-</span><span class='line'>size=     865kB time=110.69 bitrate=  64.0kbits/s
-</span><span class='line'>video:0kB audio:865kB global headers:0kB muxing overhead 0.014569%
-</span><span class='line'>bramante@matrix:~/test/audio$ ll
-</span><span class='line'>total 11460
-</span><span class='line'>drwxrwxr-x 2 bramante bramante     4096 Aug 24 17:53 ./
-</span><span class='line'>drwxrwxr-x 4 bramante bramante     4096 Aug 24 17:51 ../
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante   885585 Aug 24 17:53 demo.mp3
-</span><span class='line'>-rwxrw-rw- 1 bramante bramante 10834252 Aug 24 17:25 demo.ts*
-</span><span class='line'>bramante@matrix:~/test/audio$ mediainfo demo.mp3
-</span><span class='line'>General
-</span><span class='line'>Complete name                            : demo.mp3
-</span><span class='line'>Format                                   : MPEG Audio
-</span><span class='line'>File size                                : 865 KiB
-</span><span class='line'>Duration                                 : 1mn 50s
-</span><span class='line'>Overall bit rate mode                    : Constant
-</span><span class='line'>Overall bit rate                         : 64.0 Kbps
-</span><span class='line'>Encoding settings                        : Lavf53.21.1
-</span><span class='line'>
-</span><span class='line'>Audio
-</span><span class='line'>Format                                   : MPEG Audio
-</span><span class='line'>Format version                           : Version 1
-</span><span class='line'>Format profile                           : Layer 2
-</span><span class='line'>Duration                                 : 1mn 50s
-</span><span class='line'>Bit rate mode                            : Constant
-</span><span class='line'>Bit rate                                 : 64.0 Kbps
-</span><span class='line'>Channel(s)                               : 1 channel
-</span><span class='line'>Sampling rate                            : 48.0 KHz
-</span><span class='line'>Compression mode                         : Lossy
-</span><span class='line'>Stream size                              : 864 KiB (100%)
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>bramante@matrix:~/test/audio$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -1961,6 +1804,10 @@ lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/09/09/expand-macro/">Expand Macro</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs On Exit</a>
         </li>
       
@@ -1974,10 +1821,6 @@ lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
       
         <li>
           <a href="/blog/2015/09/04/fallocate/">fallocate</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/09/03/download-the-source-code-of-the-ginga/">Download the source code of the Ginga</a>
         </li>
       
     </ul>

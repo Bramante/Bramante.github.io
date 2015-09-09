@@ -126,6 +126,130 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/09/09/define-macro-on-command-line/">Define Macro on Command Line</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-09T09:30:10+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/09/09/define-macro-on-command-line/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>之前曾經遇過在source file與header file裡找不到Macro定義的狀況,
+最後才發現Macro被定義在command line上,
+以下示範如何在command line上定義Macro.</p>
+
+<p>範例程式:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">c</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">c</span> <span class="o">=</span> <span class="n">SUM</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">);</span>
+</span><span class='line'> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;c = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">c</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/blog/define_macro_on_command_line$ gcc -o ./test "-DSUM(a,b)=(a+b)" ./test.c
+</span><span class='line'>bramante@matrix:~/blog/define_macro_on_command_line$ ./test
+</span><span class='line'>c = 3
+</span><span class='line'>bramante@matrix:~/blog/define_macro_on_command_line$ gcc -E "-DSUM(a,b)=(a+b)" ./test.c | grep -A8 "int main(void)"
+</span><span class='line'>int main(void)
+</span><span class='line'>{
+</span><span class='line'> int a = 1 ;
+</span><span class='line'> int b = 2 ;
+</span><span class='line'> int c ;
+</span><span class='line'> c = (a+b);
+</span><span class='line'> printf("c = %d\n",c);
+</span><span class='line'> return 0 ;
+</span><span class='line'>}
+</span><span class='line'>bramante@matrix:~/blog/define_macro_on_command_line$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>從執行的結果, 與展開Macro後的source code,
+可以確定在command line上定義Macro是可行的.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/09/09/expand-macro/">Expand Macro</a></h1>
         
     
@@ -1704,89 +1828,6 @@ lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/27/http-redirect/">HTTP Redirect</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-27T00:23:32+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/27/http-redirect/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>我的NAS之前改成NAS裡的每個帳號都可以有自己的web page之後,
-就一直沒特別去處理NAS的home page,
-以至於連到home page時,
-畫面上什麼也沒有,
-目前索性把它redirect到github pages的blog,
-修改方法很簡單, 只要把.htaccess修改如下就可以了:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>DiskStation&gt; cat /volume1/web/.htaccess
-</span><span class='line'>
-</span><span class='line'># BEGIN WordPress
-</span><span class='line'>RewriteEngine On
-</span><span class='line'>RewriteCond %{HTTPS} off
-</span><span class='line'>RewriteRule index.htm https://bramante.github.io/
-</span><span class='line'># END WordPress
-</span><span class='line'>DiskStation&gt;</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -1804,6 +1845,10 @@ lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/09/09/define-macro-on-command-line/">Define Macro on Command Line</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/09/expand-macro/">Expand Macro</a>
         </li>
       
@@ -1817,10 +1862,6 @@ lsof也能反應出已經沒有程式在access test.c這個file的變化.</p>
       
         <li>
           <a href="/blog/2015/09/04/direct-io/">Direct IO</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/09/04/fallocate/">fallocate</a>
         </li>
       
     </ul>

@@ -3,6 +3,14 @@
   
   
   <url>
+    <loc>http://Bramante.github.io/blog/2015/09/09/define-macro-on-command-line/</loc>
+    
+    <lastmod>2015-09-09T09:30:10+08:00</lastmod>
+    
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://Bramante.github.io/blog/2015/09/09/expand-macro/</loc>
     
     <lastmod>2015-09-09T09:22:22+08:00</lastmod>
@@ -293,14 +301,14 @@
   
   <url>
     <loc>http://Bramante.github.io/blog/archives/</loc>
-    <lastmod>2015-09-09T09:25:51+08:00</lastmod>
+    <lastmod>2015-09-09T09:32:16+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://Bramante.github.io/</loc>
-    <lastmod>2015-09-09T09:25:51+08:00</lastmod>
+    <lastmod>2015-09-09T09:32:16+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>

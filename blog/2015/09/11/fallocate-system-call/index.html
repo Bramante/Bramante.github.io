@@ -1,0 +1,673 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Fallocate System Call - Bramante&#x27;s Blog</title>
+  <meta name="author" content="Bramante">
+  <link rel="author" href="humans.txt">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  
+    
+  
+  <meta name="description" content="嵌入式系統的儲存空間相當有限, 如果在下載檔案前,
+先把檔案按預期的大小給建立起來, 下載時再來寫入真正的檔案內容,
+這樣便能保證不會發生下載到一半卻出現Disk Full的狀況. Linux系統有個fallocate system call可以讓我們快速建立內容全為0x00的檔案, &hellip;">
+  
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://Bramante.github.io/blog/2015/09/11/fallocate-system-call/">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Bramante&#x27;s Blog" type="application/atom+xml">
+  <meta name="og:type" content="website" />
+  <meta name="og:site_name" content="Bramante&#x27;s Blog" />
+  <meta name="og:title" content="Fallocate System Call" />
+  <meta name="og:description" content="嵌入式系統的儲存空間相當有限, 如果在下載檔案前,
+先把檔案按預期的大小給建立起來, 下載時再來寫入真正的檔案內容,
+這樣便能保證不會發生下載到一半卻出現Disk Full的狀況. Linux系統有個fallocate system call可以讓我們快速建立內容全為0x00的檔案, &hellip;" />
+  <meta name="og:url" content="http://Bramante.github.io/blog/2015/09/11/fallocate-system-call/"/>
+  <meta name="url" content="http://Bramante.github.io/blog/2015/09/11/fallocate-system-call/">
+  
+  <meta name="subject" content=""/>
+  <meta name="category" content=""/>
+  
+  <meta name="distribution" content="global">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <nav role="navigation"><div class="navbar">
+  <div class="navbar-inner">
+    <a class="brand" href="/">Bramante&#x27;s Blog</a>
+    <ul class="nav">
+      <li><a href="/">Home</a></li>
+      <li><a href="/blog/archives">Archives</a></li>
+    </ul>
+    <ul class="nav" data-subscription="rss">
+      <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+      
+    </ul>
+      
+    <form class="navbar-form" action="https://www.google.com/search" method="get">
+      <fieldset role="search">
+        <input type="hidden" name="q" value="site:Bramante.github.io" />
+        <input class="span2" type="text" name="q" results="0" placeholder="Search"/>
+      </fieldset>
+    </form>
+      
+    
+  </div>
+</div>
+</nav>
+  <div class="wrapper_single">
+    <div class="container">
+      <div class="row">
+        <article class="span8 offset2" role="article">
+          <div class="article-format">
+
+  <header>
+    
+      
+        <h1 class="entry-title">Fallocate System Call</h1>
+      
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-11T23:39:45+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>嵌入式系統的儲存空間相當有限, 如果在下載檔案前,
+先把檔案按預期的大小給建立起來, 下載時再來寫入真正的檔案內容,
+這樣便能保證不會發生下載到一半卻出現Disk Full的狀況.</p>
+
+<p>Linux系統有個fallocate system call可以讓我們快速建立內容全為0x00的檔案,
+相當適合用來處理這樣的問題.</p>
+
+<p>以下的程式會利用fallocate system call, 建立多個1GB大小的file,
+直到無法再寫檔為止:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;sys/stat.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;sys/syscall.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;sys/types.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;fcntl.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;ctype.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;linux/falloc.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">FILE</span><span class="o">*</span> <span class="n">fh</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">char</span> <span class="n">fname</span><span class="p">[</span><span class="mi">128</span><span class="p">]</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">loff_t</span>  <span class="n">length</span> <span class="o">=</span> <span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">loff_t</span>  <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">falloc_mode</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">error</span><span class="p">;</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">200</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>     <span class="n">sprintf</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s">&quot;./data%04d&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">);</span>
+</span><span class='line'>     <span class="n">fh</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span> <span class="n">fname</span><span class="p">,</span><span class="s">&quot;w+&quot;</span><span class="p">);</span>
+</span><span class='line'>     <span class="k">if</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>        <span class="n">error</span> <span class="o">=</span> <span class="n">syscall</span><span class="p">(</span><span class="n">SYS_fallocate</span><span class="p">,</span> <span class="n">fileno</span><span class="p">(</span><span class="n">fh</span><span class="p">),</span> <span class="n">falloc_mode</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">length</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">error</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">{</span>
+</span><span class='line'>           <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[*][error] no space !!!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">perror</span><span class="p">(</span><span class="s">&quot;fallocate failed&quot;</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="n">fclose</span><span class="p">(</span><span class="n">fh</span><span class="p">);</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編譯與執行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test/fallocate$ gcc -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test/fallocate$ time ./test
+</span><span class='line'>[*][error] no space !!!
+</span><span class='line'>fallocate failed: Disk quota exceeded
+</span><span class='line'>
+</span><span class='line'>real    0m0.897s
+</span><span class='line'>user    0m0.000s
+</span><span class='line'>sys     0m0.100s
+</span><span class='line'>bramante@matrix:~/test/fallocate$ ll
+</span><span class='line'>total 92309096
+</span><span class='line'>drwxrwxr-x 2 bramante bramante       4096 Sep  8 19:04 ./
+</span><span class='line'>drwxr-xr-x 6 bramante bramante       4096 Sep  8 18:16 ../
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0000
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0001
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0002
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0003
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0004
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0005
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0006
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0007
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0008
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0009
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0010
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0011
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0012
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0013
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0014
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0015
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0016
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0017
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0018
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0019
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0020
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0021
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0022
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0023
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0024
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0025
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0026
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0027
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0028
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0029
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0030
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0031
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0032
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0033
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0034
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0035
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0036
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0037
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0038
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0039
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0040
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0041
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0042
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0043
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0044
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0045
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0046
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0047
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0048
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0049
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0050
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0051
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0052
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0053
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0054
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0055
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0056
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0057
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0058
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0059
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0060
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0061
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0062
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0063
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0064
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0065
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0066
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0067
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0068
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0069
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0070
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0071
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0072
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0073
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0074
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0075
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0076
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0077
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0078
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0079
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0080
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0081
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0082
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0083
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0084
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0085
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0086
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 1073741824 Sep  8 19:04 data0087
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante   34848768 Sep  8 19:04 data0088
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante       8799 Sep  8 19:04 test*
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante        721 Sep  8 19:04 test.c
+</span><span class='line'>bramante@matrix:~/test/fallocate$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>不到1 sec可以建立出超過88 GB的檔案, 真的是好快,
+而且disk quota用盡時, 程式還能順利停下來,
+實在是很不錯.</p>
+
+<p>從以下的執行範例, 可以看出建檔與砍檔都很快,
+都不用1 sec, 而且檔案的確有內容, 內容都為0x00 :</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test/fallocate$ time ./test
+</span><span class='line'>[*][error] no space !!!
+</span><span class='line'>fallocate failed: Disk quota exceeded
+</span><span class='line'>
+</span><span class='line'>real    0m0.741s
+</span><span class='line'>user    0m0.000s
+</span><span class='line'>sys     0m0.100s
+</span><span class='line'>bramante@matrix:~/test/fallocate$ hexdump -C data0087
+</span><span class='line'>00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+</span><span class='line'>*
+</span><span class='line'>40000000
+</span><span class='line'>bramante@matrix:~/test/fallocate$ hexdump -C data0088
+</span><span class='line'>00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+</span><span class='line'>*
+</span><span class='line'>0213a000
+</span><span class='line'>bramante@matrix:~/test/fallocate$ hexdump -C data0001
+</span><span class='line'>00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+</span><span class='line'>*
+</span><span class='line'>40000000
+</span><span class='line'>bramante@matrix:~/test/fallocate$ time rm data0*
+</span><span class='line'>
+</span><span class='line'>real    0m0.864s
+</span><span class='line'>user    0m0.004s
+</span><span class='line'>sys     0m0.820s
+</span><span class='line'>bramante@matrix:~/test/fallocate$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>另外要提一下, fallocate其實也可以用來把file裡的內容給刪掉一段,
+例如, 刪除file開頭的4096 byte:</p>
+
+<pre><code>syscall(SYS_fallocate, fileno(fh), FALLOC_FL_COLLAPSE_RANGE, 0, 4096);
+</code></pre>
+
+<p>這個功能滿強大的, 如果能用的話, 刪除檔案裡一些不需要的內容會很快,
+只可惜我的Linux server太舊了, 這個功能沒有試成功.</p>
+</div>
+
+
+
+
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-11T23:39:45+08:00" pubdate data-updated="true"></time> - 
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://Bramante.github.io/blog/2015/09/11/fallocate-system-call/" data-via="" data-counturl="http://Bramante.github.io/blog/2015/09/11/fallocate-system-call/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    
+      <a class="pull-left" href="/blog/2015/09/09/define-macro-on-command-line/" title="Previous Post: Define Macro on Command Line">&laquo; Define Macro on Command Line</a>
+    
+    
+  </footer>
+
+</div>
+
+          
+            <div class="article-format">
+              <h1>Comments</h1>
+              <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            </div>
+          
+        </article>
+      </div>
+    </div>
+  </div>
+  <div id="footer-widgets">
+  <div class="container">
+    <div class="row">
+  <div class="span3">
+    
+
+  </div>
+  <div class="span3">
+    <h2>recent posts</h2>
+    <ul class="recent_posts">
+      
+        <li>
+          <a href="/blog/2015/09/11/fallocate-system-call/">Fallocate System Call</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/09/define-macro-on-command-line/">Define Macro on Command Line</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/09/expand-macro/">Expand Macro</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs On Exit</a>
+        </li>
+      
+        <li>
+          <a href="/blog/2015/09/04/program-crashes-on-exit/">Program Crashes On Exit</a>
+        </li>
+      
+    </ul>
+    <h2><a href="/blog/archives">archives</a></h2>
+  </div>
+  <div class="span4">
+    
+
+  </div>
+  <div class="span6">    
+    <h2>flag counter</h2>  
+<a href="http://info.flagcounter.com/83y3"><img src="http://s09.flagcounter.com/count2/83y3/bg_FFFFFF/txt_000000/border_CCCCCC/columns_3/maxflags_12/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" align="left" alt="Flag Counter" border="0"></a>
+
+ 
+
+
+
+  </div>
+</div>
+
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-left">
+  <a href="/">Bramante&#x27;s Blog</a>
+  - Copyright &copy; 2015 - Bramante
+</p>
+<p class="pull-right">
+  <span>Powered by <a href="http://octopress.org/">Octopress</a>.</span>
+  
+    <span>Designed by <a href="http://www.AdrianArtiles.com">Adrian Artiles</a>.</span>
+  
+</p>
+
+  </div>
+</footer>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/libs/jquery-1.7.2.min.js" type="text/javascript"><\/script>')</script>
+<script src="/javascripts/libs/bootstrap.min.js" type="text/javascript"></script>
+<script src="/javascripts/jquery.tweet.js" type="text/javascript"></script>
+<script src="/javascripts/jquery.instagram.js" type="text/javascript"></script>
+<script src="/javascripts/libs/jquery.masonry.min.js" type="text/javascript"></script>
+<script src="/javascripts/custom.js" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'bramantesblog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://Bramante.github.io%2Fblog%2F2015%2F09%2F11%2Ffallocate-system-call%2F';
+        var disqus_url = 'http://Bramante.github.io%2Fblog%2F2015%2F09%2F11%2Ffallocate-system-call%2F';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+</body>
+</html>

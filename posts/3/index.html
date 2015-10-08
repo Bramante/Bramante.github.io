@@ -126,6 +126,214 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/08/10/gdb-debugging-skills-1/">GDB Debugging Skills (1)</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-08-10T23:33:42+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/08/10/gdb-debugging-skills-1/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>gdb以Hex格式印出100個byte的array內容: x/100ubx array</p>
+
+<p>gdb以二進制印出變數的value: p /t var</p>
+
+<p>gdb印出function prototype: call function_name</p>
+
+<p>以下是實際操作的範例:</p>
+
+<figure class='code'><figcaption><span>test.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">var</span> <span class="o">=</span> <span class="mh">0x5A</span> <span class="p">;</span>
+</span><span class='line'> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">array</span><span class="p">[</span><span class="mi">100</span><span class="p">];</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>     <span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">100</span> <span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ gcc -g -o ./test ./test.c
+</span><span class='line'>bramante@matrix:~/test$ cat -n test.c
+</span><span class='line'>     1  #include &lt;stdio.h&gt;
+</span><span class='line'>     2
+</span><span class='line'>     3  int main(void)
+</span><span class='line'>     4  {
+</span><span class='line'>     5   unsigned char var = 0x5A ;
+</span><span class='line'>     6   unsigned char array[100];
+</span><span class='line'>     7   int i ;
+</span><span class='line'>     8   for( i = 0 ; i &lt; 100 ; i ++ )
+</span><span class='line'>     9      {
+</span><span class='line'>    10       array[i] = i + 100 ;
+</span><span class='line'>    11      }
+</span><span class='line'>    12   return 0 ;
+</span><span class='line'>    13  }
+</span><span class='line'>bramante@matrix:~/test$ gdb ./test
+</span><span class='line'>GNU gdb (Ubuntu/Linaro 7.4-2012.04-0ubuntu2.1) 7.4-2012.04
+</span><span class='line'>Copyright (C) 2012 Free Software Foundation, Inc.
+</span><span class='line'>License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+</span><span class='line'>This is free software: you are free to change and redistribute it.
+</span><span class='line'>There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+</span><span class='line'>and "show warranty" for details.
+</span><span class='line'>This GDB was configured as "x86_64-linux-gnu".
+</span><span class='line'>For bug reporting instructions, please see:
+</span><span class='line'>&lt;http://bugs.launchpad.net/gdb-linaro/&gt;...
+</span><span class='line'>Reading symbols from /home/bramante/test/test...done.
+</span><span class='line'>(gdb) b test.c:12
+</span><span class='line'>Breakpoint 1 at 0x400561: file ./test.c, line 12.
+</span><span class='line'>(gdb) run
+</span><span class='line'>Starting program: /home/bramante/test/test
+</span><span class='line'>warning: no loadable sections found in added symbol-file system-supplied DSO at 0x7ffff7ffa000
+</span><span class='line'>
+</span><span class='line'>Breakpoint 1, main () at ./test.c:12
+</span><span class='line'>12       return 0 ;
+</span><span class='line'>(gdb) x/100ubx array
+</span><span class='line'>0x7fffffffe460: 0x64    0x65    0x66    0x67    0x68    0x69    0x6a    0x6b
+</span><span class='line'>0x7fffffffe468: 0x6c    0x6d    0x6e    0x6f    0x70    0x71    0x72    0x73
+</span><span class='line'>0x7fffffffe470: 0x74    0x75    0x76    0x77    0x78    0x79    0x7a    0x7b
+</span><span class='line'>0x7fffffffe478: 0x7c    0x7d    0x7e    0x7f    0x80    0x81    0x82    0x83
+</span><span class='line'>0x7fffffffe480: 0x84    0x85    0x86    0x87    0x88    0x89    0x8a    0x8b
+</span><span class='line'>0x7fffffffe488: 0x8c    0x8d    0x8e    0x8f    0x90    0x91    0x92    0x93
+</span><span class='line'>0x7fffffffe490: 0x94    0x95    0x96    0x97    0x98    0x99    0x9a    0x9b
+</span><span class='line'>0x7fffffffe498: 0x9c    0x9d    0x9e    0x9f    0xa0    0xa1    0xa2    0xa3
+</span><span class='line'>0x7fffffffe4a0: 0xa4    0xa5    0xa6    0xa7    0xa8    0xa9    0xaa    0xab
+</span><span class='line'>0x7fffffffe4a8: 0xac    0xad    0xae    0xaf    0xb0    0xb1    0xb2    0xb3
+</span><span class='line'>0x7fffffffe4b0: 0xb4    0xb5    0xb6    0xb7    0xb8    0xb9    0xba    0xbb
+</span><span class='line'>0x7fffffffe4b8: 0xbc    0xbd    0xbe    0xbf    0xc0    0xc1    0xc2    0xc3
+</span><span class='line'>0x7fffffffe4c0: 0xc4    0xc5    0xc6    0xc7
+</span><span class='line'>(gdb) p /t var
+</span><span class='line'>$1 = 1011010
+</span><span class='line'>(gdb) call main
+</span><span class='line'>$2 = {int (void)} 0x400524 &lt;main&gt;
+</span><span class='line'>(gdb)</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>在得知function prototype後,
+就能利用LD_PRELOAD來hook function,
+在整合沒有source code的third-party的library時,
+這是一個重要的debug技巧.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/08/09/dump-pcr/">Dump PCR</a></h1>
         
     
@@ -2087,171 +2295,6 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/07/29/array-0/">Array[0]</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-07-29T00:10:09+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/07/29/array-0/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>我在用C/C++實作Query API的時候, 喜歡使用array[0]的技巧, 使用這個技巧有2個好處:</p>
-
-<ol>
-<li>動態決定array size, 所以存放record的array不會有record過多而裝不下的困擾, 也不會發生record太少而浪費array空間的問題出現.</li>
-<li>Query到資訊是存放在透過malloc()取得的1個memory chunk上, 因此要歸還memory時, 只需直接free()它即可, 不需要為每個Query API都實作一個相對應的歸還memory的API.</li>
-</ol>
-
-
-<p>以下是使用array[0]技巧的程式範例:</p>
-
-<figure class='code'><figcaption><span>array.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">struct</span> <span class="n">PERSON_RECORD</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kt">char</span> <span class="n">name</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span>  <span class="n">age</span> <span class="p">;</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">PERSON_RECORD</span> <span class="n">PERSON_RECORD</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">struct</span> <span class="n">FAMILY_INFO</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">recordNum</span> <span class="p">;</span>
-</span><span class='line'>  <span class="n">PERSON_RECORD</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">;</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">FAMILY_INFO</span> <span class="n">FAMILY_INFO</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="nf">GetFamilyInfo</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="kt">int</span> <span class="n">structSize</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">FAMILY_INFO</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PERSON_RECORD</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="n">pInfo</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">structSize</span><span class="p">);</span>
-</span><span class='line'> <span class="n">memset</span><span class="p">(</span> <span class="n">pInfo</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="n">structSize</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">recordNum</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">strncpy</span><span class="p">(</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;Michael&quot;</span><span class="p">,</span> <span class="mi">32</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">age</span> <span class="o">=</span> <span class="mi">10</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">strncpy</span><span class="p">(</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;Bill&quot;</span><span class="p">,</span> <span class="mi">32</span> <span class="p">);</span>
-</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">age</span> <span class="o">=</span> <span class="mi">15</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">return</span> <span class="n">pInfo</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="n">pInfo</span> <span class="p">;</span>
-</span><span class='line'> <span class="n">pInfo</span> <span class="o">=</span> <span class="n">GetFamilyInfo</span><span class="p">();</span>
-</span><span class='line'> <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
-</span><span class='line'> <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">recordNum</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>     <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[%d] name: %s age: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">age</span> <span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'> <span class="n">free</span><span class="p">(</span><span class="n">pInfo</span><span class="p">);</span>
-</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/array$ gcc -o array array.c
-</span><span class='line'>bramante@matrix:~/array$ ./array
-</span><span class='line'>[1] name: Michael age: 10
-</span><span class='line'>[2] name: Bill age: 15
-</span><span class='line'>bramante@matrix:~/array$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>印象中, array[0]這招是我在讀BSD的malloc()演算法時所學到的技巧.</p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -2269,6 +2312,10 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/10/09/gnu-make-print-commands-before-executing/">GNU Make print commands before executing</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/11/fallocate-system-call/">Fallocate System Call</a>
         </li>
       
@@ -2282,10 +2329,6 @@ MIPS和ARM對 __builtin_return_address()的支援則相當有限,
       
         <li>
           <a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs On Exit</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/09/04/program-crashes-on-exit/">Program Crashes On Exit</a>
         </li>
       
     </ul>

@@ -126,6 +126,171 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/07/29/array-0/">Array[0]</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-29T00:10:09+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/07/29/array-0/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>我在用C/C++實作Query API的時候, 喜歡使用array[0]的技巧, 使用這個技巧有2個好處:</p>
+
+<ol>
+<li>動態決定array size, 所以存放record的array不會有record過多而裝不下的困擾, 也不會發生record太少而浪費array空間的問題出現.</li>
+<li>Query到資訊是存放在透過malloc()取得的1個memory chunk上, 因此要歸還memory時, 只需直接free()它即可, 不需要為每個Query API都實作一個相對應的歸還memory的API.</li>
+</ol>
+
+
+<p>以下是使用array[0]技巧的程式範例:</p>
+
+<figure class='code'><figcaption><span>array.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">struct</span> <span class="n">PERSON_RECORD</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kt">char</span> <span class="n">name</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span>  <span class="n">age</span> <span class="p">;</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">PERSON_RECORD</span> <span class="n">PERSON_RECORD</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">struct</span> <span class="n">FAMILY_INFO</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">recordNum</span> <span class="p">;</span>
+</span><span class='line'>  <span class="n">PERSON_RECORD</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">;</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">FAMILY_INFO</span> <span class="n">FAMILY_INFO</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="nf">GetFamilyInfo</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">structSize</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">FAMILY_INFO</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PERSON_RECORD</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="n">pInfo</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">structSize</span><span class="p">);</span>
+</span><span class='line'> <span class="n">memset</span><span class="p">(</span> <span class="n">pInfo</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="n">structSize</span> <span class="p">);</span>
+</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">recordNum</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">strncpy</span><span class="p">(</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;Michael&quot;</span><span class="p">,</span> <span class="mi">32</span> <span class="p">);</span>
+</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">age</span> <span class="o">=</span> <span class="mi">10</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">strncpy</span><span class="p">(</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;Bill&quot;</span><span class="p">,</span> <span class="mi">32</span> <span class="p">);</span>
+</span><span class='line'> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">age</span> <span class="o">=</span> <span class="mi">15</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">return</span> <span class="n">pInfo</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="n">FAMILY_INFO</span><span class="o">*</span> <span class="n">pInfo</span> <span class="p">;</span>
+</span><span class='line'> <span class="n">pInfo</span> <span class="o">=</span> <span class="n">GetFamilyInfo</span><span class="p">();</span>
+</span><span class='line'> <span class="kt">int</span> <span class="n">i</span> <span class="p">;</span>
+</span><span class='line'> <span class="k">for</span><span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">recordNum</span> <span class="p">;</span> <span class="n">i</span> <span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>     <span class="n">printf</span><span class="p">(</span><span class="s">&quot;[%d] name: %s age: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="n">pInfo</span><span class="o">-&gt;</span><span class="n">record</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">age</span> <span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'> <span class="n">free</span><span class="p">(</span><span class="n">pInfo</span><span class="p">);</span>
+</span><span class='line'> <span class="k">return</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/array$ gcc -o array array.c
+</span><span class='line'>bramante@matrix:~/array$ ./array
+</span><span class='line'>[1] name: Michael age: 10
+</span><span class='line'>[2] name: Bill age: 15
+</span><span class='line'>bramante@matrix:~/array$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>印象中, array[0]這招是我在讀BSD的malloc()演算法時所學到的技巧.</p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/07/28/create-video-with-audio-and-still-image/">Create Video With Audio and Still Image</a></h1>
         
     
@@ -1471,6 +1636,10 @@ Ctrl + break  放開再按  t
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/10/09/gnu-make-print-commands-before-executing/">GNU Make print commands before executing</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/11/fallocate-system-call/">Fallocate System Call</a>
         </li>
       
@@ -1484,10 +1653,6 @@ Ctrl + break  放開再按  t
       
         <li>
           <a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs On Exit</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/09/04/program-crashes-on-exit/">Program Crashes On Exit</a>
         </li>
       
     </ul>

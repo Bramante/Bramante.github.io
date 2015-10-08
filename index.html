@@ -126,6 +126,360 @@
   <header>
     
       <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
+        <h1 class="entry-title"><a href="/blog/2015/10/09/gnu-make-print-commands-before-executing/">GNU Make Print Commands Before Executing</a></h1>
+        
+    
+    
+      <p class="meta">
+        
+  
+
+
+  
+    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
+  
+
+ - 
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-10-09T00:27:29+08:00" pubdate data-updated="true"></time> - 
+        
+
+
+        
+         | <a href="/blog/2015/10/09/gnu-make-print-commands-before-executing/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>複雜的大型程式有時很難搞清楚它們是怎麼被build出來的,
+如果我們能看到GNU Make在執行Makefile時做了些什麼,
+那麼狀況就會變得很清楚.</p>
+
+<p>另外, 像是Android.mk,
+最終負責執行它的內容的程式,
+其實也是GNU Make,
+所以如果我們能看到GNU Make執行了哪些command,
+那我們就可以知道在build Android時,
+Android到底用了哪些特別的compiler flag.</p>
+
+<p>我改了一版GNU Make來取得make執行了哪些command的資訊,
+build code的方法如下:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ git clone https://github.com/Bramante/debugging-tools.git
+</span><span class='line'>bramante@matrix:~$ cd debugging-tools/make-3.81/
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ ./configure
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ make</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>我改動的code其實就只有下面這幾行:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ git log job.c
+</span><span class='line'>commit 127676f45707a6bef7361c146b9b106d4302393a
+</span><span class='line'>Author: bramante &lt;bramante@matrix.(none)&gt;
+</span><span class='line'>Date:   Thu Oct 8 00:04:48 2015 +0800
+</span><span class='line'>
+</span><span class='line'>    +: Making make print commands before executing.
+</span><span class='line'>
+</span><span class='line'>commit d6ded34ecab13b1569186fd4b879fdee98b49f65
+</span><span class='line'>Author: bramante &lt;bramante@matrix.(none)&gt;
+</span><span class='line'>Date:   Wed Oct 7 09:38:08 2015 +0800
+</span><span class='line'>
+</span><span class='line'>    +: make-3.81
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ git diff d6ded34ecab13b1569186fd4b879fdee98b49f65 job.c
+</span><span class='line'>diff --git a/make-3.81/job.c b/make-3.81/job.c
+</span><span class='line'>old mode 100644
+</span><span class='line'>new mode 100755
+</span><span class='line'>index a81cd81..a912b36
+</span><span class='line'>--- a/make-3.81/job.c
+</span><span class='line'>+++ b/make-3.81/job.c
+</span><span class='line'>@@ -2073,6 +2073,32 @@ exec_command (char **argv, char **envp)
+</span><span class='line'>
+</span><span class='line'> # else
+</span><span class='line'>
+</span><span class='line'>+  char* makeLogFileName = getenv("MAKE_LOG_FILE_NAME");
+</span><span class='line'>+  if( makeLogFileName )
+</span><span class='line'>+    {
+</span><span class='line'>+     int i ;
+</span><span class='line'>+     FILE * fh = NULL ;
+</span><span class='line'>+     fh = fopen( makeLogFileName, "a" );
+</span><span class='line'>+     if(fh)
+</span><span class='line'>+       {
+</span><span class='line'>+        fprintf(fh,"[*][argv] ");
+</span><span class='line'>+        for(i=0;argv[i]!=NULL;i++)
+</span><span class='line'>+           {
+</span><span class='line'>+            fprintf(fh,"%s ",argv[i]);
+</span><span class='line'>+           }
+</span><span class='line'>+        fprintf(fh,"\n");
+</span><span class='line'>+        fprintf(fh,"[*][envp] ");
+</span><span class='line'>+        for(i=0;envp[i]!=NULL;i++)
+</span><span class='line'>+           {
+</span><span class='line'>+            fprintf(fh,"%s ",envp[i]);
+</span><span class='line'>+           }
+</span><span class='line'>+        fprintf(fh,"\n");
+</span><span class='line'>+        fflush(fh);
+</span><span class='line'>+        fsync(fileno(fh));
+</span><span class='line'>+        fclose(fh);
+</span><span class='line'>+       }
+</span><span class='line'>+   }
+</span><span class='line'>+
+</span><span class='line'>   /* Run the program.  */
+</span><span class='line'>   environ = envp;
+</span><span class='line'>   execvp (argv[0], argv);
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>替換掉原本系統裡的GNU Make, 並設定log file的名稱:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ which make
+</span><span class='line'>/usr/bin/make
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ ll make
+</span><span class='line'>-rwxrwxr-x 1 bramante bramante 610769 Oct  8 17:10 make*
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ cp ./make ../
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ cd ..
+</span><span class='line'>bramante@matrix:~/debugging-tools$ ll
+</span><span class='line'>total 616
+</span><span class='line'>drwxr-xr-x  4 bramante bramante   4096 Oct  8 18:20 ./
+</span><span class='line'>drwxr-xr-x 19 bramante bramante   4096 Oct  8 17:09 ../
+</span><span class='line'>drwxrwxr-x  8 bramante bramante   4096 Oct  8 17:09 .git/
+</span><span class='line'>-rwxrwxr-x  1 bramante bramante 610769 Oct  8 18:20 make*
+</span><span class='line'>drwxrwxr-x 10 bramante bramante   4096 Oct  8 17:10 make-3.81/
+</span><span class='line'>bramante@matrix:~/debugging-tools$ pwd
+</span><span class='line'>/home/bramante/debugging-tools
+</span><span class='line'>bramante@matrix:~/debugging-tools$ export PATH="/home/bramante/debugging-tools:$PATH"
+</span><span class='line'>bramante@matrix:~/debugging-tools$ which make
+</span><span class='line'>/home/bramante/debugging-tools/make
+</span><span class='line'>bramante@matrix:~/debugging-tools$ export MAKE_LOG_FILE_NAME="make_log.txt"</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>重build GNU Make 3.81來取得make執行了哪些command的資訊:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/debugging-tools$ cd -
+</span><span class='line'>/home/bramante/debugging-tools/make-3.81
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ make clean ; make
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ ll make_log.txt
+</span><span class='line'>-rw-rw-r-- 1 bramante bramante 99665 Oct  8 18:27 make_log.txt
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+
+<p>從log file可以看出make執行過哪些command:</p>
+
+<p><font face="sans"></p>
+
+<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$ grep "\[argv]" make_log.txt
+</span><span class='line'>[*][argv] /bin/sh -c if test ! -f config.h; then \
+</span><span class='line'>[*][argv] make all-recursive
+</span><span class='line'>[*][argv] /bin/sh -c failcom='exit 1'; \
+</span><span class='line'>[*][argv] /bin/sh -c if test ! -f config.h; then \
+</span><span class='line'>[*][argv] /bin/sh -c failcom='exit 1'; \
+</span><span class='line'>[*][argv] /bin/sh -c test -z "make" || rm -f make
+</span><span class='line'>[*][argv] /bin/sh -c test -z "loadavg" || rm -f loadavg
+</span><span class='line'>[*][argv] rm -f ansi2knr
+</span><span class='line'>[*][argv] /bin/sh -c rm -f *.o
+</span><span class='line'>[*][argv] /bin/sh -c test "" = "" || rm -f *_.c
+</span><span class='line'>[*][argv] /bin/sh -c if test ! -f config.h; then \
+</span><span class='line'>[*][argv] make all-recursive
+</span><span class='line'>[*][argv] /bin/sh -c failcom='exit 1'; \
+</span><span class='line'>[*][argv] /bin/sh -c if test ! -f config.h; then \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT ar.o -MD -MP -MF ".deps/ar.Tpo" -c -o ar.o ar.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT arscan.o -MD -MP -MF ".deps/arscan.Tpo" -c -o arscan.o arscan.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT commands.o -MD -MP -MF ".deps/commands.Tpo" -c -o commands.o commands.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT default.o -MD -MP -MF ".deps/default.Tpo" -c -o default.o default.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT dir.o -MD -MP -MF ".deps/dir.Tpo" -c -o dir.o dir.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT expand.o -MD -MP -MF ".deps/expand.Tpo" -c -o expand.o expand.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT file.o -MD -MP -MF ".deps/file.Tpo" -c -o file.o file.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT function.o -MD -MP -MF ".deps/function.Tpo" -c -o function.o function.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT getopt.o -MD -MP -MF ".deps/getopt.Tpo" -c -o getopt.o getopt.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT getopt1.o -MD -MP -MF ".deps/getopt1.Tpo" -c -o getopt1.o getopt1.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT implicit.o -MD -MP -MF ".deps/implicit.Tpo" -c -o implicit.o implicit.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT job.o -MD -MP -MF ".deps/job.Tpo" -c -o job.o job.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT main.o -MD -MP -MF ".deps/main.Tpo" -c -o main.o main.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT misc.o -MD -MP -MF ".deps/misc.Tpo" -c -o misc.o misc.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT read.o -MD -MP -MF ".deps/read.Tpo" -c -o read.o read.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT remake.o -MD -MP -MF ".deps/remake.Tpo" -c -o remake.o remake.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT remote-stub.o -MD -MP -MF ".deps/remote-stub.Tpo" -c -o remote-stub.o remote-stub.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT rule.o -MD -MP -MF ".deps/rule.Tpo" -c -o rule.o rule.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT signame.o -MD -MP -MF ".deps/signame.Tpo" -c -o signame.o signame.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT strcache.o -MD -MP -MF ".deps/strcache.Tpo" -c -o strcache.o strcache.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT variable.o -MD -MP -MF ".deps/variable.Tpo" -c -o variable.o variable.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT version.o -MD -MP -MF ".deps/version.Tpo" -c -o version.o version.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT vpath.o -MD -MP -MF ".deps/vpath.Tpo" -c -o vpath.o vpath.c; \
+</span><span class='line'>[*][argv] /bin/sh -c if gcc -DLOCALEDIR=\"/usr/local/share/locale\" -DLIBDIR=\"/usr/local/lib\" -DINCLUDEDIR=\"/usr/local/include\" -DHAVE_CONFIG_H -I. -I. -I.      -g -O2 -MT hash.o -MD -MP -MF ".deps/hash.Tpo" -c -o hash.o hash.c; \
+</span><span class='line'>[*][argv] rm -f make
+</span><span class='line'>[*][argv] gcc -g -O2 -o make ar.o arscan.o commands.o default.o dir.o expand.o file.o function.o getopt.o getopt1.o implicit.o job.o main.o misc.o read.o remake.o remote-stub.o rule.o signame.o strcache.o variable.o version.o vpath.o hash.o -lrt
+</span><span class='line'>bramante@matrix:~/debugging-tools/make-3.81$</span></code></pre></td></tr></table></div></figure>
+
+
+<p></font></p>
+</div>
+  
+  
+  
+
+
+</div>
+
+      </article>
+    
+    
+      <article class="span4">
+        <div class="article-format">
+
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
         <h1 class="entry-title"><a href="/blog/2015/09/11/fallocate-system-call/">Fallocate System Call</a></h1>
         
     
@@ -1908,211 +2262,6 @@ fchmod( fhOutput, fileAttr.st_mode );
 
       </article>
     
-    
-      <article class="span4">
-        <div class="article-format">
-
-  <header>
-    
-      <!-- Now we're back to normal posts. Note the links used under href in both headers.--> 
-        <h1 class="entry-title"><a href="/blog/2015/08/27/nohup/">Nohup</a></h1>
-        
-    
-    
-      <p class="meta">
-        
-  
-
-
-  
-    <span class="byline author vcard">by <span class="fn">Bramante</span></span>
-  
-
- - 
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-08-27T23:58:20+08:00" pubdate data-updated="true"></time> - 
-        
-
-
-        
-         | <a href="/blog/2015/08/27/nohup/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Build Android的source code很花時間,
-如果能利用下班時間來build code是不錯的選擇,
-但是下班後Terminal必需保持與Server的連線才能build code嗎?
-其實不用, 只要使用nohup這個command在背景執行build code script就可以了.</p>
-
-<p>示範用的script:</p>
-
-<figure class='code'><figcaption><span>test.sh</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">i</span><span class="o">=</span>0
-</span><span class='line'>
-</span><span class='line'><span class="k">while</span> <span class="o">[</span> <span class="nv">$i</span> -lt <span class="m">50</span> <span class="o">]</span>
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'>  <span class="nb">echo</span> <span class="s2">&quot;Do something.... $i&quot;</span>
-</span><span class='line'>  <span class="nv">i</span><span class="o">=</span><span class="k">$(</span> expr <span class="nv">$i</span> + <span class="m">1</span> <span class="k">)</span>
-</span><span class='line'>  sleep 1
-</span><span class='line'><span class="k">done</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;done.&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>用nohup在背景執行test.sh, 然後登出Server:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~/test$ ll
-</span><span class='line'>total 12
-</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 28 00:16 ./
-</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
-</span><span class='line'>-rw-rw-r-- 1 bramante bramante  121 Aug 28 00:10 test.sh
-</span><span class='line'>bramante@matrix:~/test$ chmod a+x test.sh
-</span><span class='line'>bramante@matrix:~/test$ ll
-</span><span class='line'>total 12
-</span><span class='line'>drwxrwxr-x 2 bramante bramante 4096 Aug 28 00:16 ./
-</span><span class='line'>drwxr-xr-x 5 bramante bramante 4096 Aug 20 09:29 ../
-</span><span class='line'>-rwxrwxr-x 1 bramante bramante  121 Aug 28 00:10 test.sh*
-</span><span class='line'>bramante@matrix:~/test$ nohup ./test.sh &
-</span><span class='line'>[1] 3214
-</span><span class='line'>bramante@matrix:~/test$ nohup: ignoring input and appending output to `nohup.out'
-</span><span class='line'>
-</span><span class='line'>bramante@matrix:~/test$ exit</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>之後再次登入Server時, 可以用&#8221;tail -f ./nohup.out&#8221;查看build code log,
-看看是否有執行到&#8221;done&#8221;, 把script完整的跑完:</p>
-
-<p><font face="sans"></p>
-
-<figure class='code'><figcaption><span>Terminal</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bramante@matrix:~$ cd test/
-</span><span class='line'>bramante@matrix:~/test$ tail -f ./nohup.out
-</span><span class='line'>Do something.... 22
-</span><span class='line'>Do something.... 23
-</span><span class='line'>Do something.... 24
-</span><span class='line'>Do something.... 25
-</span><span class='line'>Do something.... 26
-</span><span class='line'>Do something.... 27
-</span><span class='line'>Do something.... 28
-</span><span class='line'>Do something.... 29
-</span><span class='line'>Do something.... 30
-</span><span class='line'>Do something.... 31
-</span><span class='line'>Do something.... 32
-</span><span class='line'>Do something.... 33
-</span><span class='line'>Do something.... 34
-</span><span class='line'>Do something.... 35
-</span><span class='line'>Do something.... 36
-</span><span class='line'>Do something.... 37
-</span><span class='line'>Do something.... 38
-</span><span class='line'>Do something.... 39
-</span><span class='line'>Do something.... 40
-</span><span class='line'>Do something.... 41
-</span><span class='line'>Do something.... 42
-</span><span class='line'>Do something.... 43
-</span><span class='line'>Do something.... 44
-</span><span class='line'>Do something.... 45
-</span><span class='line'>Do something.... 46
-</span><span class='line'>Do something.... 47
-</span><span class='line'>Do something.... 48
-</span><span class='line'>Do something.... 49
-</span><span class='line'>done.
-</span><span class='line'>^C
-</span><span class='line'>bramante@matrix:~/test$</span></code></pre></td></tr></table></div></figure>
-
-
-<p></font></p>
-
-<p>有看到&#8221;done&#8221;, test.sh最後有完整的跑完.</p>
-</div>
-  
-  
-  
-
-
-</div>
-
-      </article>
-    
     </div>
   </div>
 </div>
@@ -2130,6 +2279,10 @@ fchmod( fhOutput, fileAttr.st_mode );
     <ul class="recent_posts">
       
         <li>
+          <a href="/blog/2015/10/09/gnu-make-print-commands-before-executing/">GNU Make print commands before executing</a>
+        </li>
+      
+        <li>
           <a href="/blog/2015/09/11/fallocate-system-call/">Fallocate System Call</a>
         </li>
       
@@ -2143,10 +2296,6 @@ fchmod( fhOutput, fileAttr.st_mode );
       
         <li>
           <a href="/blog/2015/09/04/program-hangs-on-exit/">Program Hangs On Exit</a>
-        </li>
-      
-        <li>
-          <a href="/blog/2015/09/04/program-crashes-on-exit/">Program Crashes On Exit</a>
         </li>
       
     </ul>
